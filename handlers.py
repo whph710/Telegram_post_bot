@@ -42,16 +42,21 @@ async def process_and_send_album(media_group_id: str):
         original_text = first_message.caption or ""
         caption_entities = first_message.caption_entities
 
-        logger.info(f"📝 Обрабатываем альбом с текстом: {original_text[:100]}...")
+        logger.info(f"Обрабатываем альбом с текстом: {original_text[:100]}...")
 
         # Извлекаем ссылки
         links_data = extract_links_from_entities(original_text, caption_entities)
         formatted_links = format_links_for_ai(links_data)
 
-        logger.info(f"🔗 Найденные ссылки в альбоме: {formatted_links}")
+        logger.info(f"Найденные ссылки в альбоме: {formatted_links}")
 
         # Обрабатываем через AI
         processed_text = await process_with_deepseek(original_text, formatted_links)
+
+        # Проверяем длину обработанного текста
+        if len(processed_text) > 1024:
+            logger.warning(f"Текст слишком длинный ({len(processed_text)} символов), обрезаем")
+            processed_text = processed_text[:1020] + "..."
 
         # Строим медиа-группу с обработанным текстом
         media_group = media_processor.build_media_group(album_messages, processed_text)
@@ -59,10 +64,26 @@ async def process_and_send_album(media_group_id: str):
         # Отправляем в группу
         await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
 
-        logger.info(f"✅ Альбом отправлен ({len(album_messages)} элементов) с обработанным текстом")
+        logger.info(f"Альбом отправлен ({len(album_messages)} элементов) с обработанным текстом")
 
     except Exception as e:
-        logger.exception(f"❌ Ошибка обработки альбома: {e}")
+        logger.error(f"О шибка обработки альбома: {e}")
+
+        # Пытаемся отправить без AI обработки
+        try:
+            first_message = album_messages[0]
+            fallback_text = first_message.caption or ""
+
+            if len(fallback_text) > 1024:
+                fallback_text = fallback_text[:1020] + "..."
+
+            media_group = media_processor.build_media_group(album_messages, fallback_text)
+            await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
+
+            logger.info("Альбом отправлен с оригинальным текстом (fallback)")
+
+        except Exception as fallback_error:
+            logger.error(f"❌ Критическая ошибка отправки альбома: {fallback_error}")
 
 
 async def process_and_send_single(message: types.Message):
@@ -75,8 +96,8 @@ async def process_and_send_single(message: types.Message):
         links_data = extract_links_from_entities(text, entities)
         formatted_links = format_links_for_ai(links_data)
 
-        logger.info(f"📝 Обрабатываем одиночное сообщение: {text[:100]}...")
-        logger.info(f"🔗 Найденные ссылки: {formatted_links}")
+        logger.info(f"Обрабатываем одиночное сообщение: {text[:100]}...")
+        logger.info(f"Найденные ссылки: {formatted_links}")
 
         # Обрабатываем через AI
         processed_text = await process_with_deepseek(text, formatted_links)
@@ -87,6 +108,11 @@ async def process_and_send_single(message: types.Message):
         if media_info['has_media']:
             # Отправляем с медиа (одиночное медиа как медиагруппа для единообразия)
             if media_info['type'] in ['photo', 'video', 'document']:
+                # Проверяем длину текста для медиа-группы
+                if len(processed_text) > 1024:
+                    logger.warning(f"⚠️ Текст слишком длинный ({len(processed_text)} символов), обрезаем")
+                    processed_text = processed_text[:1020] + "..."
+
                 media_group = media_processor.build_single_media_group(message, processed_text)
                 await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
             else:
@@ -126,7 +152,20 @@ async def process_and_send_single(message: types.Message):
         logger.info(f"✅ Одиночное сообщение обработано и отправлено")
 
     except Exception as e:
-        logger.exception(f"❌ Ошибка обработки одиночного сообщения: {e}")
+        logger.error(f"❌ Ошибка обработки одиночного сообщения: {e}")
+
+        # Пытаемся отправить оригинальное сообщение
+        try:
+            original_text = message.text or message.caption or ""
+            if original_text.strip():
+                await bot.send_message(
+                    chat_id=GROUP_ID,
+                    text=original_text,
+                    parse_mode=None  # Без HTML парсинга для безопасности
+                )
+                logger.info("📤 Отправлено оригинальное сообщение (fallback)")
+        except Exception as fallback_error:
+            logger.error(f"❌ Критическая ошибка отправки: {fallback_error}")
 
 
 @router.message(F.media_group_id & (F.from_user.id == MY_ID))

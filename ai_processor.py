@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import logging
+import re
 from typing import Optional
 from openai import AsyncOpenAI
 from config import DEEPSEEK
@@ -31,9 +32,63 @@ async def load_prompt() -> str:
 ВАЖНО: 
 - Все ссылки должны быть сохранены и оформлены в HTML формате с тегом <a href="URL">текст</a>
 - Если в тексте есть упоминания (@username), сохрани их как есть
-- Ответ должен быть в формате HTML с кликабельными ссылками
+- Ответ должен быть в обычном тексте с HTML-ссылками, БЕЗ тегов <p>, <div>, <html>, <!doctype> и других структурных тегов
+- Используй только теги <a>, <b>, <i>, <u>, <s>, <code>, <pre>
 - Сохрани смысл и тон исходного сообщения
 - Улучши структуру и читабельность"""
+
+
+def clean_html_for_telegram(text: str) -> str:
+    """Очищает HTML от неподдерживаемых Telegram тегов"""
+    if not text:
+        return ""
+
+    # Удаляем структурные HTML теги, которые Telegram не поддерживает
+    unwanted_tags = [
+        r'<!DOCTYPE[^>]*>',
+        r'</?html[^>]*>',
+        r'</?head[^>]*>',
+        r'</?body[^>]*>',
+        r'</?div[^>]*>',
+        r'</?p[^>]*>',
+        r'</?span[^>]*>',
+        r'</?section[^>]*>',
+        r'</?article[^>]*>',
+        r'</?header[^>]*>',
+        r'</?footer[^>]*>',
+        r'</?main[^>]*>',
+        r'</?nav[^>]*>',
+        r'</?aside[^>]*>',
+        r'</?h[1-6][^>]*>',
+        r'</h[1-6]>',
+        r'</?ul[^>]*>',
+        r'</?ol[^>]*>',
+        r'</?li[^>]*>',
+        r'</?br[^>]*/?>'
+    ]
+
+    cleaned_text = text
+    for pattern in unwanted_tags:
+        cleaned_text = re.sub(pattern, '', cleaned_text, flags=re.IGNORECASE)
+
+    # Убираем лишние пробелы и переносы строк
+    cleaned_text = re.sub(r'\n\s*\n', '\n\n', cleaned_text)  # Двойные переносы оставляем
+    cleaned_text = re.sub(r'[ \t]+', ' ', cleaned_text)  # Множественные пробелы в один
+    cleaned_text = cleaned_text.strip()
+
+    # Проверяем, что остались только разрешенные теги
+    allowed_tags = r'</?(?:a|b|i|u|s|code|pre)(?:\s[^>]*)?>|<a\s+href=["\'][^"\']*["\'][^>]*>'
+
+    # Находим все теги
+    all_tags = re.findall(r'<[^>]+>', cleaned_text)
+
+    # Удаляем неразрешенные теги
+    for tag in all_tags:
+        if not re.match(allowed_tags, tag, re.IGNORECASE):
+            cleaned_text = cleaned_text.replace(tag, '')
+            logger.warning(f"⚠️ Удален неподдерживаемый тег: {tag}")
+
+    return cleaned_text
 
 
 async def process_with_deepseek(text: str, links: str) -> str:
@@ -55,6 +110,8 @@ async def process_with_deepseek(text: str, links: str) -> str:
 
 Переработай этот контент согласно инструкциям в системном промпте.
 Обязательно сохрани все ссылки в правильном HTML формате.
+ВАЖНО: НЕ используй теги <p>, <div>, <html>, <!doctype> и другие структурные теги!
+Используй только теги: <a>, <b>, <i>, <u>, <s>, <code>, <pre>
 """
 
         client = AsyncOpenAI(
@@ -75,9 +132,13 @@ async def process_with_deepseek(text: str, links: str) -> str:
         )
 
         result = response.choices[0].message.content.strip()
-        logger.info(f"✅ AI обработка завершена успешно (результат: {len(result)} символов)")
 
-        return result
+        # Очищаем результат от неподдерживаемых тегов
+        cleaned_result = clean_html_for_telegram(result)
+
+        logger.info(f"✅ AI обработка завершена успешно (результат: {len(cleaned_result)} символов)")
+
+        return cleaned_result
 
     except Exception as e:
         logger.error(f"❌ Ошибка AI обработки: {e}")
