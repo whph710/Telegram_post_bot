@@ -42,11 +42,13 @@ async def process_and_send_album(media_group_id: str):
         original_text = first_message.caption or ""
         caption_entities = first_message.caption_entities
 
+        logger.info(f"📝 Обрабатываем альбом с текстом: {original_text[:100]}...")
+
         # Извлекаем ссылки
         links_data = extract_links_from_entities(original_text, caption_entities)
         formatted_links = format_links_for_ai(links_data)
 
-        logger.info(f"🔗 Найденные ссылки: {formatted_links}")
+        logger.info(f"🔗 Найденные ссылки в альбоме: {formatted_links}")
 
         # Обрабатываем через AI
         processed_text = await process_with_deepseek(original_text, formatted_links)
@@ -57,7 +59,7 @@ async def process_and_send_album(media_group_id: str):
         # Отправляем в группу
         await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
 
-        logger.info(f"✅ Альбом отправлен ({len(album_messages)} элементов)")
+        logger.info(f"✅ Альбом отправлен ({len(album_messages)} элементов) с обработанным текстом")
 
     except Exception as e:
         logger.exception(f"❌ Ошибка обработки альбома: {e}")
@@ -73,8 +75,8 @@ async def process_and_send_single(message: types.Message):
         links_data = extract_links_from_entities(text, entities)
         formatted_links = format_links_for_ai(links_data)
 
-        logger.info(f"📝 Обрабатываем текст: {text[:100]}...")
-        logger.info(f"🔗 Ссылки: {formatted_links}")
+        logger.info(f"📝 Обрабатываем одиночное сообщение: {text[:100]}...")
+        logger.info(f"🔗 Найденные ссылки: {formatted_links}")
 
         # Обрабатываем через AI
         processed_text = await process_with_deepseek(text, formatted_links)
@@ -83,49 +85,48 @@ async def process_and_send_single(message: types.Message):
         media_info = media_processor.extract_media_info(message)
 
         if media_info['has_media']:
-            # Отправляем с медиа
-            if media_info['type'] == 'photo':
-                await bot.send_photo(
-                    chat_id=GROUP_ID,
-                    photo=media_info['file_id'],
-                    caption=processed_text,
-                    parse_mode="HTML"
-                )
-            elif media_info['type'] == 'video':
-                await bot.send_video(
-                    chat_id=GROUP_ID,
-                    video=media_info['file_id'],
-                    caption=processed_text,
-                    parse_mode="HTML"
-                )
-            elif media_info['type'] == 'document':
-                await bot.send_document(
-                    chat_id=GROUP_ID,
-                    document=media_info['file_id'],
-                    caption=processed_text,
-                    parse_mode="HTML"
-                )
+            # Отправляем с медиа (одиночное медиа как медиагруппа для единообразия)
+            if media_info['type'] in ['photo', 'video', 'document']:
+                media_group = media_processor.build_single_media_group(message, processed_text)
+                await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
             else:
-                # Для других типов медиа отправляем как есть + текст отдельно
-                await message.forward(GROUP_ID)
-                if processed_text.strip():
-                    await bot.send_message(
+                # Для других типов медиа (animation, voice, video_note) отправляем как есть
+                if media_info['type'] == 'animation':
+                    await bot.send_animation(
                         chat_id=GROUP_ID,
-                        text=processed_text,
+                        animation=media_info['file_id'],
+                        caption=processed_text,
                         parse_mode="HTML"
                     )
+                elif media_info['type'] == 'voice':
+                    await bot.send_voice(
+                        chat_id=GROUP_ID,
+                        voice=media_info['file_id'],
+                        caption=processed_text,
+                        parse_mode="HTML"
+                    )
+                elif media_info['type'] == 'video_note':
+                    # Video note не поддерживает caption, отправляем отдельно
+                    await bot.send_video_note(chat_id=GROUP_ID, video_note=media_info['file_id'])
+                    if processed_text.strip():
+                        await bot.send_message(
+                            chat_id=GROUP_ID,
+                            text=processed_text,
+                            parse_mode="HTML"
+                        )
         else:
             # Только текст
-            await bot.send_message(
-                chat_id=GROUP_ID,
-                text=processed_text,
-                parse_mode="HTML"
-            )
+            if processed_text.strip():
+                await bot.send_message(
+                    chat_id=GROUP_ID,
+                    text=processed_text,
+                    parse_mode="HTML"
+                )
 
-        logger.info(f"✅ Сообщение обработано и отправлено")
+        logger.info(f"✅ Одиночное сообщение обработано и отправлено")
 
     except Exception as e:
-        logger.exception(f"❌ Ошибка обработки сообщения: {e}")
+        logger.exception(f"❌ Ошибка обработки одиночного сообщения: {e}")
 
 
 @router.message(F.media_group_id & (F.from_user.id == MY_ID))
@@ -161,5 +162,5 @@ async def handle_single_message(message: types.Message):
     if message.media_group_id:
         return  # Обрабатывается как альбом
 
-    logger.info(f"📨 Получено сообщение от пользователя {message.from_user.id}")
+    logger.info(f"📨 Получено одиночное сообщение от пользователя {message.from_user.id}")
     await process_and_send_single(message)

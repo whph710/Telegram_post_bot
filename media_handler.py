@@ -2,6 +2,9 @@
 from typing import List, Optional, Dict, Any
 from aiogram import types
 from aiogram.utils.media_group import MediaGroupBuilder
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class MediaProcessor:
@@ -61,30 +64,66 @@ class MediaProcessor:
         return media_info
 
     def build_media_group(self, messages: List[types.Message], processed_caption: str) -> MediaGroupBuilder:
-        """Строит медиа-группу для отправки"""
+        """Строит медиа-группу для отправки (для альбомов)"""
         media_group = MediaGroupBuilder()
 
         for idx, msg in enumerate(messages):
             media_info = self.extract_media_info(msg)
             caption = processed_caption if idx == 0 else None
 
+            try:
+                if media_info['type'] == 'photo':
+                    media_group.add_photo(
+                        media=media_info['file_id'],
+                        caption=caption,
+                        parse_mode="HTML"
+                    )
+                elif media_info['type'] == 'video':
+                    media_group.add_video(
+                        media=media_info['file_id'],
+                        caption=caption,
+                        parse_mode="HTML"
+                    )
+                elif media_info['type'] == 'document':
+                    media_group.add_document(
+                        media=media_info['file_id'],
+                        caption=caption,
+                        parse_mode="HTML"
+                    )
+                else:
+                    logger.warning(f"Неподдерживаемый тип медиа в альбоме: {media_info['type']}")
+            except Exception as e:
+                logger.error(f"Ошибка добавления медиа в группу: {e}")
+
+        return media_group
+
+    def build_single_media_group(self, message: types.Message, processed_caption: str) -> MediaGroupBuilder:
+        """Строит медиа-группу для одиночного медиа (для единообразия отправки)"""
+        media_group = MediaGroupBuilder()
+        media_info = self.extract_media_info(message)
+
+        try:
             if media_info['type'] == 'photo':
                 media_group.add_photo(
                     media=media_info['file_id'],
-                    caption=caption,
+                    caption=processed_caption,
                     parse_mode="HTML"
                 )
             elif media_info['type'] == 'video':
                 media_group.add_video(
                     media=media_info['file_id'],
-                    caption=caption,
+                    caption=processed_caption,
                     parse_mode="HTML"
                 )
             elif media_info['type'] == 'document':
                 media_group.add_document(
                     media=media_info['file_id'],
-                    caption=caption,
+                    caption=processed_caption,
                     parse_mode="HTML"
                 )
+            else:
+                logger.warning(f"Попытка создать медиагруппу для неподдерживаемого типа: {media_info['type']}")
+        except Exception as e:
+            logger.error(f"Ошибка создания одиночной медиагруппы: {e}")
 
         return media_group

@@ -116,3 +116,61 @@ aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: can't
 2025-08-11 13:27:29,082 - aiogram.dispatcher - INFO - Polling stopped
 2025-08-11 13:27:29,413 - root - INFO - Бот завершил работу
 2025-08-11 13:27:29,668 - aiogram.dispatcher - INFO - Polling stopped for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
+2025-08-11 13:58:49,096 - __main__ - INFO - Запускаем бота...
+2025-08-11 13:58:49,477 - root - INFO - Бот успешно запущен
+2025-08-11 13:58:49,477 - aiogram.dispatcher - INFO - Start polling
+2025-08-11 13:58:49,556 - aiogram.dispatcher - INFO - Run polling for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
+2025-08-11 13:59:14,523 - handlers - INFO - Получена часть альбома 14039222033678090 (1/...)
+2025-08-11 13:59:14,523 - aiogram.event - INFO - Update id=923795241 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:59:14,523 - handlers - INFO - Получена часть альбома 14039222033678090 (2/...)
+2025-08-11 13:59:14,523 - aiogram.event - INFO - Update id=923795242 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:59:14,523 - handlers - INFO - Получена часть альбома 14039222033678090 (3/...)
+2025-08-11 13:59:14,524 - aiogram.event - INFO - Update id=923795243 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:59:14,524 - handlers - INFO - Получена часть альбома 14039222033678090 (4/...)
+2025-08-11 13:59:14,524 - aiogram.event - INFO - Update id=923795244 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:59:16,531 - handlers - INFO - Обрабатываем альбом из 4 элементов
+2025-08-11 13:59:16,531 - handlers - INFO - Исходный текст: Превращаем котов в людей. На реддите вирусится про...
+2025-08-11 13:59:16,531 - handlers - INFO - Найденные ссылки: 0
+2025-08-11 13:59:16,533 - ai_processor - INFO - Промпт загружен из файла (кодировка: cp1251)
+2025-08-11 13:59:16,533 - ai_processor - INFO - Отправляем запрос в DeepSeek (длина текста: 259 символов)
+2025-08-11 13:59:18,224 - httpx - INFO - HTTP Request: POST https://api.deepseek.com/chat/completions "HTTP/1.1 200 OK"
+2025-08-11 13:59:31,875 - ai_processor - INFO - AI обработка завершена успешно: 573 символов
+2025-08-11 13:59:32,120 - handlers - ERROR - Ошибка Telegram API при отправке альбома: Telegram server says - Bad Request: can't parse InputMedia: Can't parse entities: Unsupported start tag "p" at byte offset 0
+2025-08-11 14:04:54,825 - aiogram.dispatcher - INFO - Polling stopped
+2025-08-11 14:04:55,112 - root - INFO - Бот завершил работу
+2025-08-11 14:04:55,356 - aiogram.dispatcher - INFO - Polling stopped for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
+2025-08-11 14:07:38 - __main__ - INFO - 🚀 Запускаем бота...
+2025-08-11 14:07:39 - root - INFO - Бот успешно запущен
+2025-08-11 14:07:51 - root - INFO - Бот завершил работу
+2025-08-11 14:07:56 - __main__ - INFO - 🚀 Запускаем бота...
+2025-08-11 14:07:56 - root - INFO - Бот успешно запущен
+2025-08-11 14:08:30 - handlers - INFO - 📸 Получена часть альбома 14039226485277258 (1/...)
+2025-08-11 14:08:30 - handlers - INFO - 📸 Получена часть альбома 14039226485277258 (2/...)
+2025-08-11 14:08:30 - handlers - INFO - 📸 Получена часть альбома 14039226485277258 (3/...)
+2025-08-11 14:08:30 - handlers - INFO - 📸 Получена часть альбома 14039226485277258 (4/...)
+2025-08-11 14:08:32 - handlers - INFO - 📝 Обрабатываем альбом с текстом: Превращаем котов в людей. На реддите вирусится промт для ChatGPT, который придумывает внешность чело...
+2025-08-11 14:08:32 - handlers - INFO - 🔗 Найденные ссылки в альбоме: Ссылки и упоминания не найдены
+2025-08-11 14:08:32 - ai_processor - INFO - ✅ Промпт загружен из файла (CP1251)
+2025-08-11 14:08:33 - ai_processor - INFO - 🤖 Отправляем запрос в DeepSeek (длина текста: 261 символов)
+2025-08-11 14:08:34 - httpx - INFO - HTTP Request: POST https://api.deepseek.com/chat/completions "HTTP/1.1 200 OK"
+2025-08-11 14:08:49 - ai_processor - INFO - ✅ AI обработка завершена успешно (результат: 711 символов)
+2025-08-11 14:08:49 - handlers - ERROR - ❌ Ошибка обработки альбома: Telegram server says - Bad Request: can't parse InputMedia: Can't parse entities: Unsupported start tag "p" at byte offset 0
+Traceback (most recent call last):
+  File "C:\Users\maxim\Desktop\PycharmProjects\Telegram_Post_Bot\handlers.py", line 60, in process_and_send_album
+    await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\bot.py", line 2849, in send_media_group
+    return await self(call, request_timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\bot.py", line 488, in __call__
+    return await self.session(self, method, timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\base.py", line 254, in __call__
+    return cast(TelegramType, await middleware(bot, method))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\aiohttp.py", line 189, in make_request
+    response = self.check_response(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\base.py", line 120, in check_response
+    raise TelegramBadRequest(method=method, message=description)
+aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: can't parse InputMedia: Can't parse entities: Unsupported start tag "p" at byte offset 0
+2025-08-11 14:09:11 - root - INFO - Бот завершил работу
