@@ -1,0 +1,118 @@
+2025-08-11 11:46:09,044 - __main__ - INFO - 🚀 Запускаем бота...
+2025-08-11 11:46:09,577 - root - INFO - ✅ Бот успешно запущен
+2025-08-11 11:46:09,588 - aiogram.dispatcher - INFO - Start polling
+2025-08-11 11:46:09,658 - aiogram.dispatcher - INFO - Run polling for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
+2025-08-11 11:47:35,694 - aiogram.dispatcher - INFO - Polling stopped
+2025-08-11 11:47:36,054 - root - INFO - 🛑 Бот завершил работу
+2025-08-11 11:47:36,340 - aiogram.dispatcher - INFO - Polling stopped for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
+2025-08-11 11:47:39,390 - __main__ - INFO - Запускаем бота...
+2025-08-11 11:47:39,821 - root - INFO - Бот успешно запущен
+2025-08-11 11:47:39,832 - aiogram.dispatcher - INFO - Start polling
+2025-08-11 11:47:40,484 - aiogram.dispatcher - INFO - Run polling for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
+2025-08-11 11:48:39,416 - handlers - INFO - 📨 Получено сообщение от пользователя 632260351
+2025-08-11 11:48:39,416 - handlers - INFO - 📝 Обрабатываем текст: Милые тюлени-козлики появятся в Valheim — вышли новые тизеры дополнения The Deep North.
+
+В DLC игрок...
+2025-08-11 11:48:39,416 - handlers - INFO - 🔗 Ссылки: Скрытая ссылка: 'ехно' -> https://t.me/Techno_media
+2025-08-11 11:48:39,417 - ai_processor - ERROR - ❌ Ошибка AI обработки: 'utf-8' codec can't decode byte 0xd2 in position 0: invalid continuation byte
+2025-08-11 11:48:40,209 - handlers - INFO - ✅ Сообщение обработано и отправлено
+2025-08-11 11:48:40,209 - aiogram.event - INFO - Update id=923795230 is handled. Duration 797 ms by bot id=7087970913
+2025-08-11 11:49:58,146 - aiogram.dispatcher - INFO - Polling stopped
+2025-08-11 11:49:58,784 - root - INFO - Бот завершил работу
+2025-08-11 11:49:59,038 - aiogram.dispatcher - INFO - Polling stopped for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
+2025-08-11 11:50:02,225 - __main__ - INFO - Запускаем бота...
+2025-08-11 11:50:02,901 - root - INFO - Бот успешно запущен
+2025-08-11 11:50:02,901 - aiogram.dispatcher - INFO - Start polling
+2025-08-11 11:50:02,979 - aiogram.dispatcher - INFO - Run polling for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
+2025-08-11 11:50:21,959 - handlers - INFO - 📨 Получено сообщение от пользователя 632260351
+2025-08-11 11:50:21,959 - handlers - INFO - 📝 Обрабатываем текст: Милые тюлени-козлики появятся в Valheim — вышли новые тизеры дополнения The Deep North.
+
+В DLC игрок...
+2025-08-11 11:50:21,959 - handlers - INFO - 🔗 Ссылки: Скрытая ссылка: 'ехно
+' -> https://t.me/Techno_media
+2025-08-11 11:50:21,961 - ai_processor - ERROR - ❌ Ошибка AI обработки: 'utf-8' codec can't decode byte 0xd2 in position 25: invalid continuation byte
+2025-08-11 11:50:22,320 - handlers - INFO - ✅ Сообщение обработано и отправлено
+2025-08-11 11:50:22,320 - aiogram.event - INFO - Update id=923795231 is handled. Duration 358 ms by bot id=7087970913
+2025-08-11 11:51:08,622 - aiogram.dispatcher - INFO - Polling stopped
+2025-08-11 11:51:08,973 - root - INFO - Бот завершил работу
+2025-08-11 11:51:09,225 - aiogram.dispatcher - INFO - Polling stopped for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
+2025-08-11 11:51:12,357 - __main__ - INFO - Запускаем бота...
+2025-08-11 11:51:14,833 - root - INFO - Бот успешно запущен
+2025-08-11 11:51:14,833 - aiogram.dispatcher - INFO - Start polling
+2025-08-11 11:51:14,914 - aiogram.dispatcher - INFO - Run polling for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
+2025-08-11 11:51:24,751 - handlers - INFO - 📨 Получено сообщение от пользователя 632260351
+2025-08-11 11:51:24,751 - handlers - INFO - 📝 Обрабатываем текст: Милые тюлени-козлики появятся в Valheim — вышли новые тизеры дополнения The Deep North.
+
+В DLC игрок...
+2025-08-11 11:51:24,751 - handlers - INFO - 🔗 Ссылки: Скрытая ссылка: 'ехно
+' -> https://t.me/Techno_media
+2025-08-11 11:51:26,691 - httpx - INFO - HTTP Request: POST https://api.deepseek.com/chat/completions "HTTP/1.1 200 OK"
+2025-08-11 11:51:40,833 - ai_processor - INFO - ✅ AI обработка завершена: 494 символов
+2025-08-11 11:51:41,562 - handlers - INFO - ✅ Сообщение обработано и отправлено
+2025-08-11 11:51:41,563 - aiogram.event - INFO - Update id=923795232 is handled. Duration 16813 ms by bot id=7087970913
+2025-08-11 13:24:45,122 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-08-11 13:24:45,122 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7087970913)
+2025-08-11 13:24:56,527 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7087970913)
+2025-08-11 13:25:36,262 - handlers - INFO - 📸 Получена часть альбома 14039205888230906 (1/...)
+2025-08-11 13:25:36,262 - aiogram.event - INFO - Update id=923795233 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:25:36,262 - handlers - INFO - 📸 Получена часть альбома 14039205888230906 (2/...)
+2025-08-11 13:25:36,262 - aiogram.event - INFO - Update id=923795234 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:25:36,262 - handlers - INFO - 📸 Получена часть альбома 14039205888230906 (3/...)
+2025-08-11 13:25:36,262 - aiogram.event - INFO - Update id=923795235 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:25:36,262 - handlers - INFO - 📸 Получена часть альбома 14039205888230906 (4/...)
+2025-08-11 13:25:36,262 - aiogram.event - INFO - Update id=923795236 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:25:38,275 - handlers - INFO - 🔗 Найденные ссылки: Ссылки не найдены
+2025-08-11 13:25:39,725 - httpx - INFO - HTTP Request: POST https://api.deepseek.com/chat/completions "HTTP/1.1 200 OK"
+2025-08-11 13:25:55,545 - ai_processor - INFO - ✅ AI обработка завершена: 638 символов
+2025-08-11 13:25:55,772 - handlers - ERROR - ❌ Ошибка обработки альбома: Telegram server says - Bad Request: can't parse InputMedia: Can't parse entities: Unsupported start tag "!doctype" at byte offset 0
+Traceback (most recent call last):
+  File "C:\Users\maxim\Desktop\PycharmProjects\Telegram_Post_Bot\handlers.py", line 58, in process_and_send_album
+    await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\bot.py", line 2849, in send_media_group
+    return await self(call, request_timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\bot.py", line 488, in __call__
+    return await self.session(self, method, timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\base.py", line 254, in __call__
+    return cast(TelegramType, await middleware(bot, method))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\aiohttp.py", line 189, in make_request
+    response = self.check_response(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\base.py", line 120, in check_response
+    raise TelegramBadRequest(method=method, message=description)
+aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: can't parse InputMedia: Can't parse entities: Unsupported start tag "!doctype" at byte offset 0
+2025-08-11 13:26:15,759 - handlers - INFO - 📸 Получена часть альбома 14039206204227026 (1/...)
+2025-08-11 13:26:15,759 - aiogram.event - INFO - Update id=923795237 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:26:15,759 - handlers - INFO - 📸 Получена часть альбома 14039206204227026 (2/...)
+2025-08-11 13:26:15,759 - aiogram.event - INFO - Update id=923795238 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:26:15,759 - handlers - INFO - 📸 Получена часть альбома 14039206204227026 (3/...)
+2025-08-11 13:26:15,759 - aiogram.event - INFO - Update id=923795239 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:26:15,760 - handlers - INFO - 📸 Получена часть альбома 14039206204227026 (4/...)
+2025-08-11 13:26:15,760 - aiogram.event - INFO - Update id=923795240 is handled. Duration 0 ms by bot id=7087970913
+2025-08-11 13:26:17,762 - handlers - INFO - 🔗 Найденные ссылки: Ссылки не найдены
+2025-08-11 13:26:19,224 - httpx - INFO - HTTP Request: POST https://api.deepseek.com/chat/completions "HTTP/1.1 200 OK"
+2025-08-11 13:26:34,852 - ai_processor - INFO - ✅ AI обработка завершена: 725 символов
+2025-08-11 13:26:35,194 - handlers - ERROR - ❌ Ошибка обработки альбома: Telegram server says - Bad Request: can't parse InputMedia: Can't parse entities: Unsupported start tag "html" at byte offset 0
+Traceback (most recent call last):
+  File "C:\Users\maxim\Desktop\PycharmProjects\Telegram_Post_Bot\handlers.py", line 58, in process_and_send_album
+    await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\bot.py", line 2849, in send_media_group
+    return await self(call, request_timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\bot.py", line 488, in __call__
+    return await self.session(self, method, timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\base.py", line 254, in __call__
+    return cast(TelegramType, await middleware(bot, method))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\aiohttp.py", line 189, in make_request
+    response = self.check_response(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\base.py", line 120, in check_response
+    raise TelegramBadRequest(method=method, message=description)
+aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: can't parse InputMedia: Can't parse entities: Unsupported start tag "html" at byte offset 0
+2025-08-11 13:27:29,082 - aiogram.dispatcher - INFO - Polling stopped
+2025-08-11 13:27:29,413 - root - INFO - Бот завершил работу
+2025-08-11 13:27:29,668 - aiogram.dispatcher - INFO - Polling stopped for bot @ITHorizons_Helper_bot id=7087970913 - 'ITHorizons_Helper'
