@@ -1,0 +1,165 @@
+# -*- coding: utf-8 -*-
+import logging
+import asyncio
+from collections import defaultdict
+from typing import Dict, List
+
+from aiogram import types, F, Router
+from aiogram.enums import ContentType
+
+from bot import bot
+from config import GROUP_ID, MY_ID
+from link_extractor import extract_links_from_entities, format_links_for_ai
+from ai_processor import process_with_deepseek
+from media_handler import MediaProcessor
+
+router = Router()
+logger = logging.getLogger(__name__)
+
+# Хранилище для медиа-групп
+albums: Dict[str, List[types.Message]] = defaultdict(list)
+album_timers: Dict[str, asyncio.Task] = {}
+
+media_processor = MediaProcessor()
+
+
+async def process_and_send_album(media_group_id: str):
+    """Обрабатывает и отправляет альбом с AI обработкой"""
+    await asyncio.sleep(2)  # Ждем завершения получения всех медиа
+
+    if media_group_id not in albums:
+        return
+
+    album_messages = albums.pop(media_group_id)
+    album_timers.pop(media_group_id, None)
+
+    if not album_messages:
+        return
+
+    try:
+        # Берем caption и entities из первого сообщения
+        first_message = album_messages[0]
+        original_text = first_message.caption or ""
+        caption_entities = first_message.caption_entities
+
+        # Извлекаем ссылки
+        links_data = extract_links_from_entities(original_text, caption_entities)
+        formatted_links = format_links_for_ai(links_data)
+
+        logger.info(f"🔗 Найденные ссылки: {formatted_links}")
+
+        # Обрабатываем через AI
+        processed_text = await process_with_deepseek(original_text, formatted_links)
+
+        # Строим медиа-группу с обработанным текстом
+        media_group = media_processor.build_media_group(album_messages, processed_text)
+
+        # Отправляем в группу
+        await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
+
+        logger.info(f"✅ Альбом отправлен ({len(album_messages)} элементов)")
+
+    except Exception as e:
+        logger.exception(f"❌ Ошибка обработки альбома: {e}")
+
+
+async def process_and_send_single(message: types.Message):
+    """Обрабатывает и отправляет одиночное сообщение"""
+    try:
+        # Извлекаем текст и ссылки
+        text = message.text or message.caption or ""
+        entities = message.entities or message.caption_entities
+
+        links_data = extract_links_from_entities(text, entities)
+        formatted_links = format_links_for_ai(links_data)
+
+        logger.info(f"📝 Обрабатываем текст: {text[:100]}...")
+        logger.info(f"🔗 Ссылки: {formatted_links}")
+
+        # Обрабатываем через AI
+        processed_text = await process_with_deepseek(text, formatted_links)
+
+        # Определяем тип медиа и отправляем
+        media_info = media_processor.extract_media_info(message)
+
+        if media_info['has_media']:
+            # Отправляем с медиа
+            if media_info['type'] == 'photo':
+                await bot.send_photo(
+                    chat_id=GROUP_ID,
+                    photo=media_info['file_id'],
+                    caption=processed_text,
+                    parse_mode="HTML"
+                )
+            elif media_info['type'] == 'video':
+                await bot.send_video(
+                    chat_id=GROUP_ID,
+                    video=media_info['file_id'],
+                    caption=processed_text,
+                    parse_mode="HTML"
+                )
+            elif media_info['type'] == 'document':
+                await bot.send_document(
+                    chat_id=GROUP_ID,
+                    document=media_info['file_id'],
+                    caption=processed_text,
+                    parse_mode="HTML"
+                )
+            else:
+                # Для других типов медиа отправляем как есть + текст отдельно
+                await message.forward(GROUP_ID)
+                if processed_text.strip():
+                    await bot.send_message(
+                        chat_id=GROUP_ID,
+                        text=processed_text,
+                        parse_mode="HTML"
+                    )
+        else:
+            # Только текст
+            await bot.send_message(
+                chat_id=GROUP_ID,
+                text=processed_text,
+                parse_mode="HTML"
+            )
+
+        logger.info(f"✅ Сообщение обработано и отправлено")
+
+    except Exception as e:
+        logger.exception(f"❌ Ошибка обработки сообщения: {e}")
+
+
+@router.message(F.media_group_id & (F.from_user.id == MY_ID))
+async def handle_album_part(message: types.Message):
+    """Обработка части альбома"""
+    media_group_id = message.media_group_id
+    albums[media_group_id].append(message)
+
+    logger.info(f"📸 Получена часть альбома {media_group_id} ({len(albums[media_group_id])}/...)")
+
+    # Обновляем таймер
+    if media_group_id in album_timers:
+        album_timers[media_group_id].cancel()
+
+    album_timers[media_group_id] = asyncio.create_task(
+        process_and_send_album(media_group_id)
+    )
+
+
+@router.message(
+    (F.content_type.in_({
+        ContentType.TEXT,
+        ContentType.PHOTO,
+        ContentType.VIDEO,
+        ContentType.DOCUMENT,
+        ContentType.ANIMATION,
+        ContentType.VOICE,
+        ContentType.VIDEO_NOTE
+    })) & (F.from_user.id == MY_ID)
+)
+async def handle_single_message(message: types.Message):
+    """Обработка одиночных сообщений"""
+    if message.media_group_id:
+        return  # Обрабатывается как альбом
+
+    logger.info(f"📨 Получено сообщение от пользователя {message.from_user.id}")
+    await process_and_send_single(message)
