@@ -84,7 +84,8 @@ async def show_preview(user_id: int, processed_text: str, original_messages: Lis
             chat_id=user_id,
             text=preview_text,
             reply_markup=keyboard,
-            parse_mode="HTML"
+            parse_mode="HTML",
+            disable_web_page_preview=True  # ДОБАВЛЕНО: отключаем превью
         )
         logger.info(f"Отправлен предпросмотр поста #{post_id} пользователю {user_id}")
     except Exception as e:
@@ -165,7 +166,10 @@ async def publish_post(post_id: int):
             # Альбом
             messages = post_data['original_messages']
             media_group = media_processor.build_media_group(messages, processed_text)
-            await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
+            await bot.send_media_group(
+                chat_id=GROUP_ID,
+                media=media_group.build()
+            )
             logger.info(f"Альбом опубликован (пост #{post_id})")
 
         elif post_data['original_message']:
@@ -176,28 +180,37 @@ async def publish_post(post_id: int):
             if media_info['has_media']:
                 if media_info['type'] in ['photo', 'video', 'document']:
                     media_group = media_processor.build_single_media_group(message, processed_text)
-                    await bot.send_media_group(chat_id=GROUP_ID, media=media_group.build())
+                    await bot.send_media_group(
+                        chat_id=GROUP_ID,
+                        media=media_group.build()
+                    )
                 elif media_info['type'] == 'animation':
                     await bot.send_animation(
                         chat_id=GROUP_ID,
                         animation=media_info['file_id'],
                         caption=processed_text,
-                        parse_mode="HTML"
+                        parse_mode="HTML",
+                        disable_web_page_preview=True  # ДОБАВЛЕНО: отключаем превью
                     )
                 elif media_info['type'] == 'voice':
                     await bot.send_voice(
                         chat_id=GROUP_ID,
                         voice=media_info['file_id'],
                         caption=processed_text,
-                        parse_mode="HTML"
+                        parse_mode="HTML",
+                        disable_web_page_preview=True  # ДОБАВЛЕНО: отключаем превью
                     )
                 elif media_info['type'] == 'video_note':
-                    await bot.send_video_note(chat_id=GROUP_ID, video_note=media_info['file_id'])
+                    await bot.send_video_note(
+                        chat_id=GROUP_ID,
+                        video_note=media_info['file_id']
+                    )
                     if processed_text.strip():
                         await bot.send_message(
                             chat_id=GROUP_ID,
                             text=processed_text,
-                            parse_mode="HTML"
+                            parse_mode="HTML",
+                            disable_web_page_preview=True  # ДОБАВЛЕНО: отключаем превью
                         )
             else:
                 # Только текст
@@ -205,7 +218,8 @@ async def publish_post(post_id: int):
                     await bot.send_message(
                         chat_id=GROUP_ID,
                         text=processed_text,
-                        parse_mode="HTML"
+                        parse_mode="HTML",
+                        disable_web_page_preview=True  # ДОБАВЛЕНО: отключаем превью
                     )
 
             logger.info(f"Одиночное сообщение опубликовано (пост #{post_id})")
