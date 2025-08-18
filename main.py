@@ -26,27 +26,25 @@ async def on_shutdown():
 
 
 if __name__ == "__main__":
-    # Настройка логирования с корректной кодировкой UTF-8
+    # Настройка логирования без эмоджи
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[
-            # Файловый обработчик с явным указанием UTF-8
             logging.FileHandler("bot.log", encoding='utf-8', mode='a'),
-            # Консольный обработчик
             logging.StreamHandler()
         ],
-        # Принудительно используем UTF-8
         encoding='utf-8',
         errors='replace'
     )
 
-    # Отключаем избыточное логирование сторонних библиотек
+    # Настройка уровней логирования
     logging.getLogger("aiogram.event").setLevel(logging.WARNING)
     logging.getLogger("aiogram.dispatcher").setLevel(logging.WARNING)
     logging.getLogger("aiohttp").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("openai._base_client").setLevel(logging.WARNING)
 
     logger = logging.getLogger(__name__)
 

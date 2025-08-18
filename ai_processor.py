@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import re
+import os
 from typing import Optional
 from openai import AsyncOpenAI
 from config import DEEPSEEK
@@ -9,24 +10,34 @@ from config import DEEPSEEK
 logger = logging.getLogger(__name__)
 
 
-async def load_prompt() -> str:
-    """Загружает промпт из файла с автоопределением кодировки"""
-    try:
-        # Сначала пытаемся UTF-8
+async def load_prompt(filename: str = 'prompt.txt') -> str:
+    """Загружает промпт из файла с обработкой кодировок"""
+    if not os.path.exists(filename):
+        logger.warning(f"Файл {filename} не найден, используется стандартный промпт")
+        return get_default_prompt()
+
+    # Пробуем разные кодировки
+    encodings = ['utf-8', 'cp1251', 'windows-1251', 'iso-8859-1']
+
+    for encoding in encodings:
         try:
-            with open('prompt.txt', 'r', encoding='utf-8') as f:
+            with open(filename, 'r', encoding=encoding) as f:
                 content = f.read().strip()
-                logger.info("✅ Промпт загружен из файла (UTF-8)")
+                logger.info(f"Промпт загружен из {filename} (кодировка: {encoding})")
                 return content
-        except UnicodeDecodeError:
-            # Если не получилось, пробуем CP1251 (Windows)
-            with open('prompt.txt', 'r', encoding='cp1251') as f:
-                content = f.read().strip()
-                logger.info("✅ Промпт загружен из файла (CP1251)")
-                return content
-    except FileNotFoundError:
-        logger.warning("⚠️ prompt.txt не найден, используется стандартный промпт")
-        return """Ты опытный копирайтер и редактор контента. 
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+        except Exception as e:
+            logger.error(f"Ошибка при чтении {filename}: {e}")
+            continue
+
+    logger.error(f"Не удалось прочитать {filename} ни в одной кодировке")
+    return get_default_prompt()
+
+
+def get_default_prompt() -> str:
+    """Возвращает стандартный промпт"""
+    return """Ты опытный копирайтер и редактор контента. 
 Переработай присланный текст, сохранив основную суть, но улучшив читабельность и структуру.
 
 ВАЖНО: 
@@ -43,8 +54,8 @@ def clean_html_for_telegram(text: str) -> str:
     if not text:
         return ""
 
-    # Удаляем структурные HTML теги, которые Telegram не поддерживает
-    unwanted_tags = [
+    # Удаляем структурные HTML теги
+    unwanted_patterns = [
         r'<!DOCTYPE[^>]*>',
         r'</?html[^>]*>',
         r'</?head[^>]*>',
@@ -68,39 +79,68 @@ def clean_html_for_telegram(text: str) -> str:
     ]
 
     cleaned_text = text
-    for pattern in unwanted_tags:
+    for pattern in unwanted_patterns:
         cleaned_text = re.sub(pattern, '', cleaned_text, flags=re.IGNORECASE)
 
-    # Убираем лишние пробелы и переносы строк
-    cleaned_text = re.sub(r'\n\s*\n', '\n\n', cleaned_text)  # Двойные переносы оставляем
-    cleaned_text = re.sub(r'[ \t]+', ' ', cleaned_text)  # Множественные пробелы в один
+    # Нормализация пробелов
+    cleaned_text = re.sub(r'\n\s*\n', '\n\n', cleaned_text)
+    cleaned_text = re.sub(r'[ \t]+', ' ', cleaned_text)
     cleaned_text = cleaned_text.strip()
 
-    # Проверяем, что остались только разрешенные теги
-    allowed_tags = r'</?(?:a|b|i|u|s|code|pre)(?:\s[^>]*)?>|<a\s+href=["\'][^"\']*["\'][^>]*>'
-
-    # Находим все теги
-    all_tags = re.findall(r'<[^>]+>', cleaned_text)
+    # Проверка разрешенных тегов
+    allowed_pattern = r'</?(?:a|b|i|u|s|code|pre)(?:\s[^>]*)?>'
 
     # Удаляем неразрешенные теги
+    all_tags = re.findall(r'<[^>]+>', cleaned_text)
     for tag in all_tags:
-        if not re.match(allowed_tags, tag, re.IGNORECASE):
+        if not re.match(allowed_pattern, tag, re.IGNORECASE):
             cleaned_text = cleaned_text.replace(tag, '')
-            logger.warning(f"⚠️ Удален неподдерживаемый тег: {tag}")
+            logger.warning(f"Удален неподдерживаемый тег: {tag}")
 
     return cleaned_text
 
 
-async def process_with_deepseek(text: str, links: str) -> str:
-    """Обрабатывает текст через DeepSeek AI"""
-    if not text.strip():
-        logger.warning("⚠️ Пустой текст для обработки")
-        return ""
+async def validate_deepseek_connection() -> bool:
+    """Проверяет подключение к DeepSeek API"""
+    if not DEEPSEEK:
+        logger.error("DEEPSEEK API ключ не найден в конфигурации")
+        return False
 
     try:
-        prompt = await load_prompt()
+        client = AsyncOpenAI(
+            api_key=DEEPSEEK,
+            base_url="https://api.deepseek.com",
+            timeout=10.0
+        )
 
-        # Формируем запрос
+        # Тестовый запрос
+        response = await client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[{"role": "user", "content": "test"}],
+            max_tokens=1
+        )
+
+        logger.info("Соединение с DeepSeek API успешно")
+        return True
+
+    except Exception as e:
+        logger.error(f"Ошибка подключения к DeepSeek API: {e}")
+        return False
+
+
+async def process_with_deepseek(text: str, links: str, prompt_file: str = 'prompt.txt') -> str:
+    """Обрабатывает текст через DeepSeek AI"""
+    if not text.strip():
+        logger.warning("Пустой текст для обработки")
+        return ""
+
+    # Проверяем соединение
+    if not await validate_deepseek_connection():
+        return f"Ошибка подключения к AI. Исходный текст:\n{text}"
+
+    try:
+        prompt = await load_prompt(prompt_file)
+
         user_content = f"""
 Текст для обработки:
 {text}
@@ -116,10 +156,11 @@ async def process_with_deepseek(text: str, links: str) -> str:
 
         client = AsyncOpenAI(
             api_key=DEEPSEEK,
-            base_url="https://api.deepseek.com"
+            base_url="https://api.deepseek.com",
+            timeout=30.0
         )
 
-        logger.info(f"🤖 Отправляем запрос в DeepSeek (длина текста: {len(text)} символов)")
+        logger.info(f"Отправляем запрос в DeepSeek (длина текста: {len(text)} символов)")
 
         response = await client.chat.completions.create(
             model="deepseek-chat",
@@ -132,15 +173,11 @@ async def process_with_deepseek(text: str, links: str) -> str:
         )
 
         result = response.choices[0].message.content.strip()
-
-        # Очищаем результат от неподдерживаемых тегов
         cleaned_result = clean_html_for_telegram(result)
 
-        logger.info(f"✅ AI обработка завершена успешно (результат: {len(cleaned_result)} символов)")
-
+        logger.info(f"AI обработка завершена успешно (результат: {len(cleaned_result)} символов)")
         return cleaned_result
 
     except Exception as e:
-        logger.error(f"❌ Ошибка AI обработки: {e}")
-        # В случае ошибки возвращаем исходный текст с предупреждением
-        return f"⚠️ Ошибка обработки ИИ: {str(e)}\n\nИсходный текст:\n{text}"
+        logger.error(f"Ошибка AI обработки: {e}")
+        return f"Ошибка обработки ИИ: {str(e)}\n\nИсходный текст:\n{text}"
