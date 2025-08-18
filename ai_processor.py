@@ -157,7 +157,7 @@ async def process_with_deepseek(text: str, links: str, prompt_file: str = 'promp
         client = AsyncOpenAI(
             api_key=DEEPSEEK,
             base_url="https://api.deepseek.com",
-            timeout=30.0
+            timeout=60.0
         )
 
         logger.info(f"Отправляем запрос в DeepSeek (длина текста: {len(text)} символов)")
