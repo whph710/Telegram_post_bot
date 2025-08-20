@@ -173,3 +173,26 @@ def debug_links_extraction(text: str, entities: Optional[List[types.MessageEntit
     logger.info(f"Regex нашел {len(regex_urls)} URL: {regex_urls}")
 
     logger.info("=== КОНЕЦ ОТЛАДКИ ===")
+
+
+def remove_telegram_links(text: str) -> str:
+    """Удаляет ссылки на Telegram из текста"""
+    if not text:
+        return text
+
+    # Паттерны для Telegram ссылок
+    telegram_patterns = [
+        r'https?://t\.me/[^\s<>"\'\)]+',
+        r'https?://telegram\.me/[^\s<>"\'\)]+',
+        r'tg://[^\s<>"\'\)]+',
+        r'@[a-zA-Z0-9_]+',  # Упоминания
+    ]
+
+    cleaned_text = text
+    for pattern in telegram_patterns:
+        cleaned_text = re.sub(pattern, '', cleaned_text, flags=re.IGNORECASE)
+
+    # Очищаем лишние пробелы
+    cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
+
+    return cleaned_text

@@ -8,6 +8,8 @@ logger = logging.getLogger(__name__)
 
 
 class MediaProcessor:
+    """Процессор для работы с медиа"""
+
     def __init__(self):
         self.supported_types = {
             'photo', 'video', 'document', 'animation', 'voice', 'video_note'
@@ -127,3 +129,20 @@ class MediaProcessor:
             logger.error(f"Ошибка создания одиночной медиагруппы: {e}")
 
         return media_group
+
+    def is_supported_media_type(self, message: types.Message) -> bool:
+        """Проверяет, поддерживается ли тип медиа"""
+        media_info = self.extract_media_info(message)
+        return media_info['has_media'] and media_info['type'] in self.supported_types
+
+    def get_media_summary(self, message: types.Message) -> str:
+        """Возвращает краткое описание медиа для логов"""
+        media_info = self.extract_media_info(message)
+
+        if not media_info['has_media']:
+            return "текст"
+
+        media_type = media_info['type']
+        caption_length = len(media_info['caption']) if media_info['caption'] else 0
+
+        return f"{media_type} (подпись: {caption_length} символов)"
