@@ -8,7 +8,8 @@ from bot import bot, dp
 from config import ADMIN_ID, MESSAGES, SETTINGS
 
 # Импорт всех хендлеров
-from handlers import menu, post_creation, settings, scheduler
+from handlers import menu, post_creation, settings
+from handlers import scheduler
 
 # Импорт сервисов
 from services.scheduler_service import SchedulerService

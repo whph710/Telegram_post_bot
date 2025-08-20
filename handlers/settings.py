@@ -20,6 +20,12 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 
+@router.callback_query(SettingsAction.filter(F.action == "none"))
+async def handle_empty_action(callback: CallbackQuery):
+    """Обработка пустых действий (декоративные кнопки)"""
+    await callback.answer()
+
+
 @router.callback_query(SettingsAction.filter(F.action == "edit_prompt"))
 async def show_prompt_editor(callback: CallbackQuery, callback_data: SettingsAction, state: FSMContext):
     """Показывает редактор промпта"""
