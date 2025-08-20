@@ -1728,3 +1728,68 @@ Z.ai от китайцев:
 2025-08-18 17:00:07 - handlers - INFO - Отправлен предпросмотр поста #1 пользователю 632260351
 2025-08-18 17:00:07 - handlers - INFO - Одиночное сообщение обработано, отправлен предпросмотр
 2025-08-18 17:00:18 - handlers - INFO - Одиночное сообщение опубликовано (пост #1)
+2025-08-20 18:13:58 - __main__ - INFO - Запускаем бота...
+2025-08-20 18:13:58 - root - INFO - Бот успешно запущен
+2025-08-20 18:14:31 - handlers - INFO - Получено одиночное медиа сообщение от пользователя 632260351
+2025-08-20 18:14:31 - link_extractor - INFO - Извлечено ссылок: 0 обычных + 1 скрытых = 1 всего
+2025-08-20 18:14:31 - link_extractor - INFO - Отформатировано 1 ссылок/упоминаний для AI
+2025-08-20 18:14:31 - handlers - INFO - Обрабатываем одиночное сообщение: Создаём уникальный дизайн в ДВА КЛИКА — нашли имбовый сервис Rustic, который сгенерирует любую графи...
+2025-08-20 18:14:31 - handlers - INFO - Найденные ссылки: Текстовая ссылка #1: 'тут.' -> https://www.rusticai.art/
+2025-08-20 18:14:37 - ai_processor - INFO - Соединение с DeepSeek API успешно
+2025-08-20 18:14:37 - ai_processor - INFO - Промпт загружен из prompt.txt (кодировка: utf-8)
+2025-08-20 18:14:39 - ai_processor - INFO - Отправляем запрос в DeepSeek (длина текста: 283 символов)
+2025-08-20 18:14:52 - ai_processor - INFO - AI обработка завершена успешно (результат: 538 символов)
+2025-08-20 18:14:53 - handlers - INFO - Отправлен предпросмотр поста #1 пользователю 632260351
+2025-08-20 18:14:53 - handlers - INFO - Одиночное сообщение обработано, отправлен предпросмотр
+2025-08-20 18:20:56 - handlers - INFO - Получено одиночное медиа сообщение от пользователя 632260351
+2025-08-20 18:20:56 - link_extractor - WARNING - Entity выходит за пределы текста: offset=309, length=9, text_len=317
+2025-08-20 18:20:56 - link_extractor - INFO - Извлечено ссылок: 0 обычных + 0 скрытых = 0 всего
+2025-08-20 18:20:56 - handlers - INFO - Обрабатываем одиночное сообщение: Нейросеть поможет выучить что угодно. Можно создать карточки для обучения из видео на YouTube, стран...
+2025-08-20 18:20:56 - handlers - INFO - Найденные ссылки: Ссылки и упоминания не найдены
+2025-08-20 18:21:02 - ai_processor - INFO - Соединение с DeepSeek API успешно
+2025-08-20 18:21:02 - ai_processor - INFO - Промпт загружен из prompt.txt (кодировка: utf-8)
+2025-08-20 18:21:04 - ai_processor - INFO - Отправляем запрос в DeepSeek (длина текста: 317 символов)
+2025-08-20 18:21:15 - ai_processor - INFO - AI обработка завершена успешно (результат: 429 символов)
+2025-08-20 18:21:15 - handlers - INFO - Отправлен предпросмотр поста #1 пользователю 632260351
+2025-08-20 18:21:15 - handlers - INFO - Одиночное сообщение обработано, отправлен предпросмотр
+2025-08-20 18:21:25 - handlers - INFO - Одиночное сообщение опубликовано (пост #1)
+2025-08-20 18:22:31 - handlers - INFO - Получена часть альбома 14045569213263434 (1/...)
+2025-08-20 18:22:31 - handlers - INFO - Получена часть альбома 14045569213263434 (2/...)
+2025-08-20 18:22:33 - handlers - INFO - Обрабатываем альбом с текстом: Тут опять роботы за вашей работой пришли — агент Runner H поднял 220 миллионов инвестиций и сейчас д...
+2025-08-20 18:22:33 - link_extractor - WARNING - Entity выходит за пределы текста: offset=512, length=2, text_len=512
+2025-08-20 18:22:33 - link_extractor - WARNING - Entity выходит за пределы текста: offset=512, length=2, text_len=512
+2025-08-20 18:22:33 - link_extractor - INFO - Извлечено ссылок: 0 обычных + 1 скрытых = 1 всего
+2025-08-20 18:22:33 - link_extractor - INFO - Отформатировано 1 ссылок/упоминаний для AI
+2025-08-20 18:22:33 - handlers - INFO - Найденные ссылки в альбоме: Текстовая ссылка #1: 'Runner H' -> https://runner.hcompany.ai/
+2025-08-20 18:22:40 - ai_processor - INFO - Соединение с DeepSeek API успешно
+2025-08-20 18:22:40 - ai_processor - INFO - Промпт загружен из prompt.txt (кодировка: utf-8)
+2025-08-20 18:22:42 - ai_processor - INFO - Отправляем запрос в DeepSeek (длина текста: 512 символов)
+2025-08-20 18:22:54 - ai_processor - INFO - AI обработка завершена успешно (результат: 556 символов)
+2025-08-20 18:22:55 - handlers - INFO - Отправлен предпросмотр поста #1 пользователю 632260351
+2025-08-20 18:23:05 - handlers - INFO - Альбом опубликован (пост #1)
+2025-08-20 18:23:27 - handlers - INFO - Получено одиночное медиа сообщение от пользователя 632260351
+2025-08-20 18:23:27 - link_extractor - WARNING - Entity выходит за пределы текста: offset=193, length=2, text_len=194
+2025-08-20 18:23:27 - link_extractor - INFO - Извлечено ссылок: 0 обычных + 1 скрытых = 1 всего
+2025-08-20 18:23:27 - link_extractor - INFO - Отформатировано 1 ссылок/упоминаний для AI
+2025-08-20 18:23:27 - handlers - INFO - Обрабатываем одиночное сообщение: Не потеряйте золото — единственный известный мне сайт для скачивания видео с YouTube без очередей, л...
+2025-08-20 18:23:27 - handlers - INFO - Найденные ссылки: Текстовая ссылка #1: 'Cliply' -> https://www.cliply.space/
+2025-08-20 18:23:34 - ai_processor - INFO - Соединение с DeepSeek API успешно
+2025-08-20 18:23:34 - ai_processor - INFO - Промпт загружен из prompt.txt (кодировка: utf-8)
+2025-08-20 18:23:36 - ai_processor - INFO - Отправляем запрос в DeepSeek (длина текста: 194 символов)
+2025-08-20 18:23:48 - ai_processor - INFO - AI обработка завершена успешно (результат: 505 символов)
+2025-08-20 18:23:48 - handlers - INFO - Отправлен предпросмотр поста #1 пользователю 632260351
+2025-08-20 18:23:48 - handlers - INFO - Одиночное сообщение обработано, отправлен предпросмотр
+2025-08-20 18:24:23 - handlers - INFO - Одиночное сообщение опубликовано (пост #1)
+2025-08-20 18:47:05 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-08-20 18:47:05 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7087970913)
+2025-08-20 18:47:06 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2025-08-20 18:47:06 - aiogram.dispatcher - WARNING - Sleep for 1.428706 seconds and try again... (tryings = 1, bot id = 7087970913)
+2025-08-20 18:47:08 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2025-08-20 18:47:08 - aiogram.dispatcher - WARNING - Sleep for 1.969731 seconds and try again... (tryings = 2, bot id = 7087970913)
+2025-08-20 18:47:10 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2025-08-20 18:47:10 - aiogram.dispatcher - WARNING - Sleep for 2.404914 seconds and try again... (tryings = 3, bot id = 7087970913)
+2025-08-20 19:31:14 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorDNSError: Cannot connect to host api.telegram.org:443 ssl:default [getaddrinfo failed]
+2025-08-20 19:31:14 - aiogram.dispatcher - WARNING - Sleep for 2.971584 seconds and try again... (tryings = 4, bot id = 7087970913)
+2025-08-20 22:06:20 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2025-08-20 22:06:20 - aiogram.dispatcher - WARNING - Sleep for 4.005566 seconds and try again... (tryings = 5, bot id = 7087970913)
+2025-08-20 22:08:10 - root - INFO - Бот завершил работу
