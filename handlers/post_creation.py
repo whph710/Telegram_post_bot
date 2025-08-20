@@ -236,13 +236,43 @@ async def handle_post_action(callback: CallbackQuery, callback_data: PostAction,
     post_id = callback_data.post_id
     action = callback_data.action
 
+    logger.info(f"Получено действие с постом: {action} для поста #{post_id}")
+
     post_data = post_storage.get_pending_post(post_id)
     if not post_data:
         await callback.answer("❌ Пост не найден", show_alert=True)
+        logger.warning(f"Пост #{post_id} не найден в хранилище")
         return
 
-    if action == "publish":
-        # Публикация поста немедленно
+    try:
+        if action == "publish":
+            # Публикация поста немедленно
+            await handle_publish_now(callback, post_data, post_id)
+
+        elif action == "schedule":
+            # Переход к планированию
+            await handle_schedule_request(callback, state, post_id)
+
+        elif action == "edit":
+            # Доработка поста
+            await handle_edit_request(callback, post_id)
+
+        elif action == "delete":
+            # Удаление поста
+            await handle_delete_post(callback, post_id)
+
+        else:
+            logger.warning(f"Неизвестное действие с постом: {action}")
+            await callback.answer("❌ Неизвестное действие", show_alert=True)
+
+    except Exception as e:
+        logger.error(f"Ошибка обработки действия {action} для поста #{post_id}: {e}")
+        await callback.answer("❌ Произошла ошибка", show_alert=True)
+
+
+async def handle_publish_now(callback: CallbackQuery, post_data: dict, post_id: int):
+    """Обрабатывает немедленную публикацию поста"""
+    try:
         from services.publisher import publish_post_now
         success = await publish_post_now(post_data)
 
@@ -253,28 +283,55 @@ async def handle_post_action(callback: CallbackQuery, callback_data: PostAction,
                 reply_markup=None
             )
             await callback.answer("✅ Пост опубликован!")
+            logger.info(f"Пост #{post_id} успешно опубликован")
         else:
             await callback.answer("❌ Ошибка публикации", show_alert=True)
+            logger.error(f"Ошибка публикации поста #{post_id}")
 
-    elif action == "schedule":
-        # Переход к планированию
+    except Exception as e:
+        logger.error(f"Ошибка при публикации поста #{post_id}: {e}")
+        await callback.answer("❌ Ошибка публикации", show_alert=True)
+
+
+async def handle_schedule_request(callback: CallbackQuery, state: FSMContext, post_id: int):
+    """Обрабатывает запрос на планирование поста"""
+    try:
         from handlers.scheduler import show_scheduler
         await show_scheduler(callback, state, post_id)
+        logger.info(f"Переход к планированию поста #{post_id}")
 
-    elif action == "edit":
-        # Доработка поста
+    except Exception as e:
+        logger.error(f"Ошибка перехода к планированию поста #{post_id}: {e}")
+        await callback.answer("❌ Ошибка перехода к планированию", show_alert=True)
+
+
+async def handle_edit_request(callback: CallbackQuery, post_id: int):
+    """Обрабатывает запрос на редактирование поста"""
+    try:
         post_storage.update_pending_post(post_id, awaiting_edit=True)
         await callback.message.edit_text(
             text=MESSAGES['edit_post_prompt'].format(post_id=post_id),
             reply_markup=None
         )
         await callback.answer("📝 Отправьте дополнения к посту")
+        logger.info(f"Пост #{post_id} переведен в режим редактирования")
 
-    elif action == "delete":
-        # Удаление поста
+    except Exception as e:
+        logger.error(f"Ошибка перевода поста #{post_id} в режим редактирования: {e}")
+        await callback.answer("❌ Ошибка", show_alert=True)
+
+
+async def handle_delete_post(callback: CallbackQuery, post_id: int):
+    """Обрабатывает удаление поста"""
+    try:
         post_storage.remove_pending_post(post_id)
         await callback.message.delete()
         await callback.answer(MESSAGES['post_deleted'])
+        logger.info(f"Пост #{post_id} удален пользователем")
+
+    except Exception as e:
+        logger.error(f"Ошибка удаления поста #{post_id}: {e}")
+        await callback.answer("❌ Ошибка удаления", show_alert=True)
 
 
 # =============================================
@@ -288,6 +345,7 @@ async def handle_auto_mode(message: Message, state: FSMContext):
 
     # Если уже в каком-то состоянии FSM, не обрабатываем
     if current_state is not None:
+        logger.debug(f"Сообщение пропущено, пользователь в состоянии: {current_state}")
         return
 
     # Проверяем доработку поста
@@ -297,6 +355,8 @@ async def handle_auto_mode(message: Message, state: FSMContext):
         return
 
     # Автоматическая обработка (режим AUTO)
+    logger.info(f"AUTO режим: получено сообщение от пользователя {message.from_user.id}")
+
     if message.media_group_id:
         await handle_album_part(message)
     else:
@@ -345,6 +405,7 @@ async def handle_auto_mode_media(message: Message, state: FSMContext):
 
     # Если в FSM состоянии, пропускаем
     if current_state is not None:
+        logger.debug(f"Медиа пропущено, пользователь в состоянии: {current_state}")
         return
 
     if message.media_group_id:
@@ -352,3 +413,11 @@ async def handle_auto_mode_media(message: Message, state: FSMContext):
 
     logger.info(f"AUTO режим: получено медиа от пользователя {message.from_user.id}")
     await process_single_for_auto_mode(message)
+
+
+# Обработка неизвестных callback'ов для постов
+@router.callback_query(StateFilter(PostCreation))
+async def handle_unknown_post_callback(callback: CallbackQuery):
+    """Обработка неизвестных callback'ов в создании постов"""
+    logger.warning(f"Неизвестный callback в создании поста: {callback.data}")
+    await callback.answer("❌ Неизвестное действие", show_alert=True)

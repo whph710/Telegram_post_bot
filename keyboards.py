@@ -51,7 +51,10 @@ class AdminAction(CallbackData, prefix="admin"):
 
 def create_main_menu() -> InlineKeyboardMarkup:
     """Создает главное меню"""
-    scheduled_count = len(post_storage.get_scheduled_posts())
+    try:
+        scheduled_count = len(post_storage.get_scheduled_posts())
+    except:
+        scheduled_count = 0
 
     buttons = [
         [InlineKeyboardButton(

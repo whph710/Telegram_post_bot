@@ -8,7 +8,7 @@ from bot import bot, dp
 from config import ADMIN_ID, MESSAGES, SETTINGS
 
 # Импорт всех хендлеров
-from handlers import menu, post_creation
+from handlers import menu, post_creation, settings, scheduler
 
 # Импорт сервисов
 from services.scheduler_service import SchedulerService
@@ -77,7 +77,11 @@ async def on_shutdown():
             await scheduler_service.stop()
 
         # Уведомляем админа о завершении
-        await bot.send_message(ADMIN_ID, MESSAGES['bot_stopping'])
+        try:
+            await bot.send_message(ADMIN_ID, MESSAGES['bot_stopping'])
+        except:
+            pass  # Игнорируем ошибки при завершении
+
         logging.info("🛑 Бот завершил работу")
 
     except Exception as e:
@@ -93,9 +97,7 @@ def setup_logging():
         handlers=[
             logging.FileHandler(SETTINGS['log_file'], encoding='utf-8', mode='a'),
             logging.StreamHandler()
-        ],
-        encoding='utf-8',
-        errors='replace'
+        ]
     )
 
     # Настройка уровней логирования для внешних библиотек
@@ -113,13 +115,15 @@ async def main():
     logger = logging.getLogger(__name__)
 
     # Проверяем конфигурацию
-    if not all([SETTINGS.get('deepseek_model'), ADMIN_ID]):
-        logger.error("❌ Не заданы обязательные параметры конфигурации")
+    if not ADMIN_ID:
+        logger.error("❌ Не задан ADMIN_ID")
         sys.exit(1)
 
     # Регистрируем роутеры
     dp.include_router(menu.router)
     dp.include_router(post_creation.router)
+    dp.include_router(settings.router)
+    dp.include_router(scheduler.router)
 
     # Регистрируем события
     dp.startup.register(on_startup)

@@ -8,9 +8,20 @@ load_dotenv()
 # 🔑 API НАСТРОЙКИ
 # ===============================
 API_TOKEN = os.getenv("API_TOKEN")
-GROUP_ID = int(os.getenv("GROUP_ID"))
-ADMIN_ID = int(os.getenv("MY_ID"))  # Переименовал для ясности
+GROUP_ID_STR = os.getenv("GROUP_ID")
+ADMIN_ID_STR = os.getenv("MY_ID")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK")
+
+# Проверяем и конвертируем ID
+try:
+    GROUP_ID = int(GROUP_ID_STR) if GROUP_ID_STR else None
+except (ValueError, TypeError):
+    GROUP_ID = None
+
+try:
+    ADMIN_ID = int(ADMIN_ID_STR) if ADMIN_ID_STR else None
+except (ValueError, TypeError):
+    ADMIN_ID = None
 
 # ===============================
 # ⏰ РАСПИСАНИЕ ПОСТИНГА (UTC+5)
