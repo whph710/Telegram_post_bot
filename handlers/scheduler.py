@@ -246,7 +246,7 @@ def find_next_available_slot(target_time: datetime) -> datetime:
                 random_offset = random.randint(0, int(slot_duration) // 60)  # В минутах
                 return slot_start + timedelta(minutes=random_offset)
 
-    return None Пустое действие (декоративные кнопки)
+    return None #Пустое действие (декоративные кнопки)
             await callback.answer()
             return
 
