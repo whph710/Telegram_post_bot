@@ -12,7 +12,8 @@ from aiogram.fsm.context import FSMContext
 
 from states import PostCreation, Menu
 from keyboards import (
-    PostAction, create_post_preview_keyboard, create_main_menu
+    PostAction, create_post_preview_keyboard, create_main_menu,
+    create_back_to_menu_keyboard
 )
 from config import ADMIN_ID, MESSAGES, SETTINGS
 from utils.post_storage import post_storage
@@ -76,7 +77,7 @@ async def process_album_and_preview(media_group_id: str):
         return
 
     album_messages = albums.pop(media_group_id)
-    album_timers.pop(media_group_id, None)
+    await album_timers.pop(media_group_id, None)
 
     if not album_messages:
         return
@@ -227,12 +228,12 @@ async def handle_post_improvement(message: Message, post_id: int):
 
 
 # =============================================
-# CALLBACK ОБРАБОТЧИКИ - ИСПРАВЛЕНО!
+# CALLBACK ОБРАБОТЧИКИ ПОСТОВ
 # =============================================
 
 @router.callback_query(PostAction.filter())
 async def handle_post_action(callback: CallbackQuery, callback_data: PostAction, state: FSMContext):
-    """Обработчик действий с постом - ИСПРАВЛЕННЫЙ"""
+    """Обработчик действий с постом"""
     post_id = callback_data.post_id
     action = callback_data.action
 
@@ -250,9 +251,8 @@ async def handle_post_action(callback: CallbackQuery, callback_data: PostAction,
             await handle_publish_now(callback, post_data, post_id)
 
         elif action == "schedule":
-            # Переход к планированию - ИСПРАВЛЕНО!
-            from handlers.scheduler import show_scheduler
-            await show_scheduler(callback, state, post_id)
+            # Переход к планированию
+            await handle_schedule_start(callback, state, post_id)
 
         elif action == "edit":
             # Доработка поста
@@ -281,7 +281,7 @@ async def handle_publish_now(callback: CallbackQuery, post_data: dict, post_id: 
             post_storage.remove_pending_post(post_id)
             await callback.message.edit_text(
                 text=MESSAGES['post_published'].format(post_id=post_id),
-                reply_markup=None
+                reply_markup=create_back_to_menu_keyboard()
             )
             await callback.answer("✅ Пост опубликован!")
             logger.info(f"Пост #{post_id} успешно опубликован")
@@ -294,13 +294,39 @@ async def handle_publish_now(callback: CallbackQuery, post_data: dict, post_id: 
         await callback.answer("❌ Ошибка публикации", show_alert=True)
 
 
+async def handle_schedule_start(callback: CallbackQuery, state: FSMContext, post_id: int):
+    """Начинает процесс планирования поста"""
+    try:
+        await state.set_state(PostCreation.scheduling)
+        await state.update_data(scheduling_post_id=post_id)
+
+        # Импортируем функцию из scheduler
+        from keyboards import create_simple_scheduler_keyboard
+
+        schedule_text = (
+            f"⏰ **ПЛАНИРОВАНИЕ ПОСТА #{post_id}**\n\n"
+            f"Выберите день и время:"
+        )
+
+        await callback.message.edit_text(
+            text=schedule_text,
+            reply_markup=create_simple_scheduler_keyboard(post_id),
+            parse_mode="Markdown"
+        )
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"Ошибка начала планирования: {e}")
+        await callback.answer("❌ Ошибка планирования", show_alert=True)
+
+
 async def handle_edit_request(callback: CallbackQuery, post_id: int):
     """Обрабатывает запрос на редактирование поста"""
     try:
         post_storage.update_pending_post(post_id, awaiting_edit=True)
         await callback.message.edit_text(
             text=MESSAGES['edit_post_prompt'].format(post_id=post_id),
-            reply_markup=None
+            reply_markup=create_back_to_menu_keyboard()
         )
         await callback.answer("📝 Отправьте дополнения к посту")
         logger.info(f"Пост #{post_id} переведен в режим редактирования")
@@ -402,11 +428,3 @@ async def handle_auto_mode_media(message: Message, state: FSMContext):
 
     logger.info(f"AUTO режим: получено медиа от пользователя {message.from_user.id}")
     await process_single_for_auto_mode(message)
-
-
-# Обработка неизвестных callback'ов для постов
-@router.callback_query(StateFilter(PostCreation))
-async def handle_unknown_post_callback(callback: CallbackQuery):
-    """Обработка неизвестных callback'ов в создании постов"""
-    logger.warning(f"Неизвестный callback в создании поста: {callback.data}")
-    await callback.answer("❌ Неизвестное действие", show_alert=True)

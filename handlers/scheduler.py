@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+import random
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 from aiogram.filters import StateFilter
@@ -9,47 +10,29 @@ from aiogram.fsm.context import FSMContext
 from states import PostCreation, Menu
 from keyboards import (
     ScheduleAction, QueueAction,
-    create_scheduler_keyboard, create_back_to_menu_keyboard,
-    create_queue_item_keyboard
+    create_simple_scheduler_keyboard, create_back_to_menu_keyboard,
+    create_queue_item_keyboard, create_day_time_keyboard
 )
-from config import ADMIN_ID, MESSAGES
+from config import ADMIN_ID, MESSAGES, POSTING_SCHEDULE
 from utils.post_storage import post_storage
-from utils.time_slots import time_slot_manager
 
 router = Router()
 logger = logging.getLogger(__name__)
 
 
-async def show_scheduler(callback: CallbackQuery, state: FSMContext, post_id: int):
-    """Показывает планировщик времени"""
-    await state.set_state(PostCreation.scheduling)
-
-    # Сохраняем ID поста в контекст состояния
-    await state.update_data(scheduling_post_id=post_id)
-
-    schedule_text = (
-        f"⏰ **ПЛАНИРОВАНИЕ ПОСТА #{post_id}**\n\n"
-        f"Выберите когда опубликовать пост:\n\n"
-        f"📋 **Расписание постинга:**\n"
-        f"{time_slot_manager.get_schedule_summary()}"
-    )
-
-    await callback.message.edit_text(
-        text=schedule_text,
-        reply_markup=create_scheduler_keyboard(post_id),
-        parse_mode="Markdown"
-    )
-    await callback.answer()
-
+# =============================================
+# ОБРАБОТЧИКИ ПЛАНИРОВЩИКА
+# =============================================
 
 @router.callback_query(ScheduleAction.filter())
 async def handle_schedule_action(callback: CallbackQuery, callback_data: ScheduleAction, state: FSMContext):
-    """Обработчик действий планировщика"""
+    """Обработчик действий простого планировщика"""
     action = callback_data.action
     post_id = callback_data.post_id
-    option = callback_data.option
+    day = callback_data.day
+    time_slot = callback_data.time_slot
 
-    logger.info(f"Получено действие планировщика: {action}, post_id: {post_id}, option: {option}")
+    logger.info(f"Планировщик: {action}, post_id: {post_id}, day: {day}, time_slot: {time_slot}")
 
     # Получаем пост
     post_data = post_storage.get_pending_post(post_id)
@@ -59,17 +42,21 @@ async def handle_schedule_action(callback: CallbackQuery, callback_data: Schedul
         return
 
     try:
-        if action == "quick":
-            # Быстрое планирование
-            await handle_quick_schedule(callback, post_id, option, state)
+        if action == "day":
+            # Выбран день - показываем время для этого дня
+            await handle_day_selection(callback, post_id, day, state)
 
-        elif action == "custom":
-            # Пользовательское время
-            await handle_custom_time_request(callback, post_id, state)
+        elif action == "quick_time":
+            # Быстрый выбор времени (утро/вечер/ночь)
+            await handle_quick_time_selection(callback, post_id, time_slot, state)
 
-        elif action == "distribute":
-            # Автоматическое распределение
-            await handle_auto_distribute(callback, post_id, state)
+        elif action == "quick":
+            # Очень быстрый выбор (30 мин, 1 час)
+            await handle_very_quick_schedule(callback, post_id, time_slot, state)
+
+        elif action == "schedule_slot":
+            # Финальное планирование в конкретный слот
+            await handle_slot_schedule(callback, post_id, day, time_slot, state)
 
         else:
             logger.warning(f"Неизвестное действие планировщика: {action}")
@@ -80,16 +67,231 @@ async def handle_schedule_action(callback: CallbackQuery, callback_data: Schedul
         await callback.answer("❌ Произошла ошибка", show_alert=True)
 
 
-async def handle_quick_schedule(callback: CallbackQuery, post_id: int, option: str, state: FSMContext):
-    """Обработка быстрого планирования"""
+async def handle_day_selection(callback: CallbackQuery, post_id: int, selected_day: str, state: FSMContext):
+    """Обрабатывает выбор дня недели"""
     try:
-        # Получаем время для опции
-        schedule_time = time_slot_manager.get_quick_schedule_time(option, datetime.now())
+        day_names = {
+            'monday': 'Понедельник',
+            'tuesday': 'Вторник',
+            'wednesday': 'Среда',
+            'thursday': 'Четверг',
+            'friday': 'Пятница',
+            'saturday': 'Суббота',
+            'sunday': 'Воскресенье'
+        }
 
-        if not schedule_time:
-            await callback.answer("❌ Не удалось найти подходящее время", show_alert=True)
+        day_name = day_names.get(selected_day, selected_day)
+
+        # Сохраняем выбранный день
+        await state.update_data(scheduling_post_id=post_id, selected_day=selected_day)
+
+        schedule_text = (
+            f"📅 **{day_name.upper()}**\n\n"
+            f"Выберите время для публикации:"
+        )
+
+        await callback.message.edit_text(
+            text=schedule_text,
+            reply_markup=create_day_time_keyboard(post_id, selected_day),
+            parse_mode="Markdown"
+        )
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"Ошибка выбора дня: {e}")
+        await callback.answer("❌ Ошибка", show_alert=True)
+
+
+async def handle_quick_time_selection(callback: CallbackQuery, post_id: int, time_slot: str, state: FSMContext):
+    """Обрабатывает быстрый выбор времени (утро/вечер/ночь)"""
+    try:
+        # Определяем следующий подходящий день и время
+        now = datetime.now()
+        schedule_time = None
+
+        time_ranges = {
+            'morning': (10, 12),  # 10:00-12:00
+            'evening': (19, 22),  # 19:00-22:00
+            'night': (23, 1)  # 23:00-01:00
+        }
+
+        if time_slot not in time_ranges:
+            await callback.answer("❌ Неизвестный временной слот", show_alert=True)
             return
 
+        start_hour, end_hour = time_ranges[time_slot]
+
+        # Ищем ближайший подходящий день
+        for days_ahead in range(7):  # Ищем в течение недели
+            check_date = now + timedelta(days=days_ahead)
+            weekday = check_date.weekday()
+
+            # Маппинг дней недели
+            weekday_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+            day_name = weekday_names[weekday]
+
+            # Проверяем, есть ли подходящие слоты в этот день
+            day_schedule = POSTING_SCHEDULE.get(day_name, [])
+
+            for slot in day_schedule:
+                slot_start_hour = int(slot['start'].split(':')[0])
+                slot_end_hour = int(slot['end'].split(':')[0])
+
+                # Обработка перехода через полночь
+                if slot_end_hour < slot_start_hour:
+                    slot_end_hour += 24
+
+                # Проверяем пересечение с нужным временем
+                if time_slot == 'night' and start_hour == 23:
+                    # Для ночного времени особая логика
+                    if (slot_start_hour >= 23 or slot_end_hour <= 1 or
+                            (slot_start_hour <= 23 and slot_end_hour >= 24)):
+                        # Генерируем случайное время в пределах слота
+                        if slot_start_hour >= 23:
+                            random_hour = random.randint(23, min(23, slot_end_hour))
+                        else:
+                            random_hour = random.randint(max(0, slot_start_hour), min(1, slot_end_hour))
+
+                        random_minute = random.randint(0, 59)
+                        schedule_time = check_date.replace(hour=random_hour, minute=random_minute, second=0,
+                                                           microsecond=0)
+                        break
+                else:
+                    # Обычная логика для утра и вечера
+                    if (slot_start_hour <= start_hour and slot_end_hour >= end_hour) or \
+                            (slot_start_hour < end_hour and slot_end_hour > start_hour):
+                        # Генерируем случайное время в пересечении
+                        actual_start = max(slot_start_hour, start_hour)
+                        actual_end = min(slot_end_hour, end_hour)
+
+                        if actual_start < actual_end:
+                            random_hour = random.randint(actual_start, actual_end - 1)
+                            random_minute = random.randint(0, 59)
+                            schedule_time = check_date.replace(hour=random_hour, minute=random_minute, second=0,
+                                                               microsecond=0)
+                            break
+
+            if schedule_time:
+                # Проверяем, что время не в прошлом
+                if schedule_time > now:
+                    break
+                else:
+                    schedule_time = None
+
+        if not schedule_time:
+            await callback.answer("❌ Не найдено подходящее время в расписании", show_alert=True)
+            return
+
+        # Планируем пост
+        await schedule_post_and_finish(callback, post_id, schedule_time, state)
+
+    except Exception as e:
+        logger.error(f"Ошибка быстрого выбора времени: {e}")
+        await callback.answer("❌ Ошибка планирования", show_alert=True)
+
+
+async def handle_very_quick_schedule(callback: CallbackQuery, post_id: int, time_slot: str, state: FSMContext):
+    """Обрабатывает очень быстрое планирование (30 мин, 1 час)"""
+    try:
+        now = datetime.now()
+
+        if time_slot == "30min":
+            target_time = now + timedelta(minutes=30)
+        elif time_slot == "1hour":
+            target_time = now + timedelta(hours=1)
+        else:
+            await callback.answer("❌ Неизвестная опция", show_alert=True)
+            return
+
+        # Находим ближайший доступный слот
+        schedule_time = find_next_available_slot(target_time)
+
+        if not schedule_time:
+            await callback.answer("❌ Нет доступных слотов", show_alert=True)
+            return
+
+        await schedule_post_and_finish(callback, post_id, schedule_time, state)
+
+    except Exception as e:
+        logger.error(f"Ошибка быстрого планирования: {e}")
+        await callback.answer("❌ Ошибка", show_alert=True)
+
+
+async def handle_slot_schedule(callback: CallbackQuery, post_id: int, day: str, time_slot_index: str,
+                               state: FSMContext):
+    """Обрабатывает планирование в конкретный временной слот"""
+    try:
+        # Получаем расписание для дня
+        day_schedule = POSTING_SCHEDULE.get(day, [])
+        slot_index = int(time_slot_index)
+
+        if slot_index >= len(day_schedule):
+            await callback.answer("❌ Неверный временной слот", show_alert=True)
+            return
+
+        slot = day_schedule[slot_index]
+
+        # Находим следующий такой день
+        now = datetime.now()
+        weekday_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        target_weekday = weekday_names.index(day)
+
+        # Ищем ближайший такой день недели
+        current_weekday = now.weekday()
+        days_ahead = (target_weekday - current_weekday) % 7
+
+        if days_ahead == 0:
+            # Сегодня - проверим, не прошло ли время
+            slot_start_time = datetime.strptime(slot['start'], '%H:%M').time()
+            today_slot_time = now.replace(hour=slot_start_time.hour, minute=slot_start_time.minute, second=0,
+                                          microsecond=0)
+
+            if today_slot_time <= now:
+                days_ahead = 7  # Следующая неделя
+
+        target_date = now + timedelta(days=days_ahead)
+
+        # Генерируем случайное время в пределах слота
+        start_time = datetime.strptime(slot['start'], '%H:%M').time()
+        end_time = datetime.strptime(slot['end'], '%H:%M').time()
+
+        # Обработка перехода через полночь
+        if end_time < start_time:
+            # Слот переходит через полночь
+            end_hour = end_time.hour + 24
+        else:
+            end_hour = end_time.hour
+
+        # Генерируем случайное время
+        start_minutes = start_time.hour * 60 + start_time.minute
+        end_minutes = end_hour * 60 + end_time.minute
+
+        random_minutes = random.randint(start_minutes, end_minutes - 1)
+        random_hour = random_minutes // 60
+        random_minute = random_minutes % 60
+
+        # Обработка перехода через полночь
+        if random_hour >= 24:
+            random_hour -= 24
+            target_date += timedelta(days=1)
+
+        schedule_time = target_date.replace(
+            hour=random_hour,
+            minute=random_minute,
+            second=0,
+            microsecond=0
+        )
+
+        await schedule_post_and_finish(callback, post_id, schedule_time, state)
+
+    except Exception as e:
+        logger.error(f"Ошибка планирования в слот: {e}")
+        await callback.answer("❌ Ошибка планирования", show_alert=True)
+
+
+async def schedule_post_and_finish(callback: CallbackQuery, post_id: int, schedule_time: datetime, state: FSMContext):
+    """Завершает планирование поста"""
+    try:
         # Получаем данные поста
         post_data = post_storage.get_pending_post(post_id)
         if not post_data:
@@ -109,183 +311,30 @@ async def handle_quick_schedule(callback: CallbackQuery, post_id: int, option: s
         post_storage.remove_pending_post(post_id)
 
         # Форматируем время для пользователя
-        formatted_time = time_slot_manager.format_datetime_for_user(schedule_time)
+        formatted_time = format_datetime_for_user(schedule_time)
 
         await callback.message.edit_text(
-            text=MESSAGES['post_scheduled'].format(time=formatted_time),
-            reply_markup=create_back_to_menu_keyboard()
-        )
-        await callback.answer(f"✅ Пост запланирован на {formatted_time}")
-
-        # Возвращаем в главное меню
-        await state.set_state(Menu.main)
-        logger.info(f"Пост #{post_id} запланирован на {schedule_time} (быстрое планирование)")
-
-    except Exception as e:
-        logger.error(f"Ошибка быстрого планирования: {e}")
-        await callback.answer("❌ Ошибка планирования", show_alert=True)
-
-
-async def handle_custom_time_request(callback: CallbackQuery, post_id: int, state: FSMContext):
-    """Запрос пользовательского времени"""
-    await state.update_data(scheduling_post_id=post_id)
-
-    custom_time_text = (
-        f"⏰ **ПОЛЬЗОВАТЕЛЬСКОЕ ВРЕМЯ**\n\n"
-        f"Отправьте дату и время в формате:\n"
-        f"`ДД.ММ.ГГГГ ЧЧ:ММ`\n\n"
-        f"Примеры:\n"
-        f"• `25.12.2024 14:30`\n"
-        f"• `01.01.2025 09:00`\n\n"
-        f"⚠️ Время должно попадать в разрешенные слоты для постинга"
-    )
-
-    await callback.message.edit_text(
-        text=custom_time_text,
-        reply_markup=create_back_to_menu_keyboard(),
-        parse_mode="Markdown"
-    )
-    await callback.answer("📝 Отправьте дату и время")
-
-
-async def handle_auto_distribute(callback: CallbackQuery, post_id: int, state: FSMContext):
-    """Автоматическое распределение в ближайшие слоты"""
-    try:
-        # Получаем данные поста
-        post_data = post_storage.get_pending_post(post_id)
-        if not post_data:
-            await callback.answer("❌ Пост не найден", show_alert=True)
-            return
-
-        # Находим ближайший доступный слот
-        now = datetime.now()
-        next_slot = time_slot_manager.get_next_available_slot(now + timedelta(minutes=30))
-
-        if not next_slot:
-            await callback.answer("❌ Не найдено доступных слотов", show_alert=True)
-            return
-
-        # Планируем пост
-        scheduled_id = post_storage.schedule_post(
-            processed_text=post_data['processed_text'],
-            publish_time=next_slot,
-            user_id=post_data['user_id'],
-            original_message=post_data.get('original_message'),
-            original_messages=post_data.get('original_messages')
-        )
-
-        # Удаляем из ожидающих
-        post_storage.remove_pending_post(post_id)
-
-        # Форматируем время для пользователя
-        formatted_time = time_slot_manager.format_datetime_for_user(next_slot)
-
-        await callback.message.edit_text(
-            text=f"🔄 **АВТОРАСПРЕДЕЛЕНИЕ**\n\n"
-                 f"Пост автоматически запланирован на ближайшее доступное время:\n\n"
-                 f"📅 **{formatted_time}**",
+            text=f"✅ **ПОСТ ЗАПЛАНИРОВАН**\n\n"
+                 f"📅 Время публикации: **{formatted_time}**\n\n"
+                 f"Пост будет автоматически опубликован в указанное время.",
             reply_markup=create_back_to_menu_keyboard(),
             parse_mode="Markdown"
         )
-        await callback.answer(f"✅ Пост запланирован на {formatted_time}")
+        await callback.answer(f"✅ Запланировано на {formatted_time}")
 
         # Возвращаем в главное меню
         await state.set_state(Menu.main)
-        logger.info(f"Пост #{post_id} автоматически запланирован на {next_slot}")
+        logger.info(f"Пост #{post_id} запланирован на {schedule_time}")
 
     except Exception as e:
-        logger.error(f"Ошибка автораспределения: {e}")
+        logger.error(f"Ошибка завершения планирования: {e}")
         await callback.answer("❌ Ошибка планирования", show_alert=True)
 
 
-@router.message(StateFilter(PostCreation.scheduling), F.from_user.id == ADMIN_ID)
-async def handle_custom_time_input(message: Message, state: FSMContext):
-    """Обработка ввода пользовательского времени"""
-    try:
-        # Получаем ID поста из состояния
-        data = await state.get_data()
-        post_id = data.get('scheduling_post_id')
-        rescheduling_post_id = data.get('rescheduling_post_id')
+# =============================================
+# ОБРАБОТЧИКИ ОЧЕРЕДИ
+# =============================================
 
-        if rescheduling_post_id:
-            # Это перепланирование существующего поста
-            await handle_reschedule_post(message, rescheduling_post_id, state)
-            return
-
-        if not post_id:
-            await message.reply("❌ Ошибка: ID поста не найден")
-            await state.set_state(Menu.main)
-            return
-
-        # Получаем данные поста
-        post_data = post_storage.get_pending_post(post_id)
-        if not post_data:
-            await message.reply("❌ Пост не найден")
-            await state.set_state(Menu.main)
-            return
-
-        # Парсим время
-        custom_time = time_slot_manager.parse_user_datetime(message.text)
-
-        if not custom_time:
-            await message.reply(
-                "❌ Неверный формат даты/времени или время в прошлом\n\n"
-                "Используйте формат: `ДД.ММ.ГГГГ ЧЧ:ММ`",
-                parse_mode="Markdown"
-            )
-            return
-
-        # Проверяем, попадает ли в слоты
-        if not time_slot_manager.is_time_in_slots(custom_time):
-            # Находим ближайший доступный слот
-            nearest_slot = time_slot_manager.get_next_available_slot(custom_time)
-
-            if nearest_slot:
-                formatted_nearest = time_slot_manager.format_datetime_for_user(nearest_slot)
-                await message.reply(
-                    f"⚠️ Указанное время не попадает в разрешенные слоты\n\n"
-                    f"Ближайшее доступное время: **{formatted_nearest}**\n\n"
-                    f"Используем это время.",
-                    parse_mode="Markdown"
-                )
-                custom_time = nearest_slot
-            else:
-                await message.reply("❌ Не найдено доступных слотов в ближайшее время")
-                return
-
-        # Планируем пост
-        scheduled_id = post_storage.schedule_post(
-            processed_text=post_data['processed_text'],
-            publish_time=custom_time,
-            user_id=post_data['user_id'],
-            original_message=post_data.get('original_message'),
-            original_messages=post_data.get('original_messages')
-        )
-
-        # Удаляем из ожидающих
-        post_storage.remove_pending_post(post_id)
-
-        # Форматируем время для пользователя
-        formatted_time = time_slot_manager.format_datetime_for_user(custom_time)
-
-        await message.reply(
-            f"✅ **ПОСТ ЗАПЛАНИРОВАН**\n\n"
-            f"📅 Время публикации: **{formatted_time}**\n\n"
-            f"Пост будет автоматически опубликован в указанное время.",
-            parse_mode="Markdown"
-        )
-
-        # Возвращаем в главное меню
-        await state.set_state(Menu.main)
-        logger.info(f"Пост #{post_id} запланирован пользователем на {custom_time}")
-
-    except Exception as e:
-        logger.error(f"Ошибка обработки пользовательского времени: {e}")
-        await message.reply("❌ Произошла ошибка при планировании")
-        await state.set_state(Menu.main)
-
-
-# Обработчики для очереди постов
 @router.callback_query(QueueAction.filter())
 async def handle_queue_action(callback: CallbackQuery, callback_data: QueueAction, state: FSMContext):
     """Обработчик действий с очередью"""
@@ -296,7 +345,7 @@ async def handle_queue_action(callback: CallbackQuery, callback_data: QueueActio
 
     try:
         if action == "refresh":
-            # Обновление списка очереди - переход к обработчику в menu.py
+            # Обновление списка очереди
             from handlers.menu import show_queue
             await show_queue(callback, state)
 
@@ -305,7 +354,7 @@ async def handle_queue_action(callback: CallbackQuery, callback_data: QueueActio
             await handle_queue_publish_now(callback, post_id, state)
 
         elif action == "change_time" and post_id:
-            # Изменение времени поста
+            # Изменение времени поста - показываем планировщик
             await handle_queue_change_time(callback, post_id, state)
 
         elif action == "cancel" and post_id:
@@ -363,19 +412,17 @@ async def handle_queue_change_time(callback: CallbackQuery, post_id: int, state:
         await state.set_state(PostCreation.scheduling)
         await state.update_data(rescheduling_post_id=post_id)
 
-        current_time = time_slot_manager.format_datetime_for_user(post_data['publish_time'])
+        current_time = format_datetime_for_user(post_data['publish_time'])
 
         change_text = (
             f"⏰ **ИЗМЕНЕНИЕ ВРЕМЕНИ ПОСТА #{post_id}**\n\n"
             f"Текущее время: **{current_time}**\n\n"
-            f"Отправьте новое время в формате:\n"
-            f"`ДД.ММ.ГГГГ ЧЧ:ММ`\n\n"
-            f"Или выберите быстрый вариант:"
+            f"Выберите новое время:"
         )
 
         await callback.message.edit_text(
             text=change_text,
-            reply_markup=create_scheduler_keyboard(post_id),
+            reply_markup=create_simple_scheduler_keyboard(post_id),
             parse_mode="Markdown"
         )
         await callback.answer("⏰ Выберите новое время")
@@ -407,64 +454,58 @@ async def handle_queue_cancel(callback: CallbackQuery, post_id: int, state: FSMC
         await callback.answer("❌ Ошибка", show_alert=True)
 
 
-async def handle_reschedule_post(message: Message, post_id: int, state: FSMContext):
-    """Обрабатывает перепланирование существующего поста"""
-    try:
-        # Получаем данные поста
-        post_data = post_storage.get_scheduled_post(post_id)
-        if not post_data:
-            await message.reply("❌ Пост не найден")
-            await state.set_state(Menu.main)
-            return
+# =============================================
+# ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+# =============================================
 
-        # Парсим новое время
-        new_time = time_slot_manager.parse_user_datetime(message.text)
+def find_next_available_slot(target_time: datetime) -> datetime:
+    """Находит следующий доступный слот после указанного времени"""
+    current = target_time
+    weekday_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
-        if not new_time:
-            await message.reply(
-                "❌ Неверный формат даты/времени или время в прошлом\n\n"
-                "Используйте формат: `ДД.ММ.ГГГГ ЧЧ:ММ`",
-                parse_mode="Markdown"
+    # Ищем в течение 7 дней
+    for days_ahead in range(7):
+        check_date = current + timedelta(days=days_ahead)
+        weekday = check_date.weekday()
+        day_name = weekday_names[weekday]
+
+        day_schedule = POSTING_SCHEDULE.get(day_name, [])
+
+        for slot in day_schedule:
+            start_time = datetime.strptime(slot['start'], '%H:%M').time()
+            end_time = datetime.strptime(slot['end'], '%H:%M').time()
+
+            slot_start = check_date.replace(
+                hour=start_time.hour,
+                minute=start_time.minute,
+                second=0,
+                microsecond=0
             )
-            return
 
-        # Проверяем слоты
-        if not time_slot_manager.is_time_in_slots(new_time):
-            nearest_slot = time_slot_manager.get_next_available_slot(new_time)
-            if nearest_slot:
-                formatted_nearest = time_slot_manager.format_datetime_for_user(nearest_slot)
-                await message.reply(
-                    f"⚠️ Время не в слотах. Используем ближайшее: **{formatted_nearest}**",
-                    parse_mode="Markdown"
-                )
-                new_time = nearest_slot
+            # Проверяем переход через полночь
+            if end_time < start_time:
+                slot_end = slot_start + timedelta(hours=24)
+                slot_end = slot_end.replace(hour=end_time.hour, minute=end_time.minute)
             else:
-                await message.reply("❌ Нет доступных слотов")
-                return
+                slot_end = check_date.replace(
+                    hour=end_time.hour,
+                    minute=end_time.minute,
+                    second=0,
+                    microsecond=0
+                )
 
-        # Обновляем время поста
-        post_storage.update_scheduled_post(post_id, publish_time=new_time)
+            # Если слот начинается после целевого времени
+            if slot_start > target_time:
+                # Генерируем случайное время в слоте
+                slot_duration = (slot_end - slot_start).total_seconds()
+                random_offset = random.randint(0, int(slot_duration) // 60)  # В минутах
+                return slot_start + timedelta(minutes=random_offset)
 
-        formatted_time = time_slot_manager.format_datetime_for_user(new_time)
-
-        await message.reply(
-            f"✅ **ВРЕМЯ ИЗМЕНЕНО**\n\n"
-            f"Пост #{post_id} перенесен на: **{formatted_time}**",
-            parse_mode="Markdown"
-        )
-
-        await state.set_state(Menu.main)
-        logger.info(f"Пост #{post_id} перепланирован на {new_time}")
-
-    except Exception as e:
-        logger.error(f"Ошибка перепланирования поста: {e}")
-        await message.reply("❌ Ошибка перепланирования")
-        await state.set_state(Menu.main)
+    return None
 
 
-# Обработка неизвестных callback'ов в планировщике
-@router.callback_query(StateFilter(PostCreation.scheduling))
-async def handle_unknown_scheduler_callback(callback: CallbackQuery):
-    """Обработка неизвестных callback'ов в планировщике"""
-    logger.warning(f"Неизвестный callback в планировщике: {callback.data}")
-    await callback.answer("❌ Неизвестное действие", show_alert=True)
+def format_datetime_for_user(dt: datetime) -> str:
+    """Форматирует дату и время для отображения пользователю"""
+    weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+    weekday_name = weekdays[dt.weekday()]
+    return f"{dt.strftime('%d.%m')} ({weekday_name}) в {dt.strftime('%H:%M')}"

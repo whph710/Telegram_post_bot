@@ -21,8 +21,9 @@ class PostAction(CallbackData, prefix="post"):
 
 class ScheduleAction(CallbackData, prefix="schedule"):
     action: str
-    post_id: Optional[int] = None
-    option: Optional[str] = None
+    post_id: int
+    day: Optional[str] = None
+    time_slot: Optional[str] = None
 
 
 class QueueAction(CallbackData, prefix="queue"):
@@ -73,9 +74,9 @@ def create_main_menu() -> InlineKeyboardMarkup:
         ]
     ]
 
-    # Добавляем кнопку очереди только если есть отложенные посты
+    # Добавляем кнопку очереди с количеством в скобках
     if scheduled_count > 0:
-        queue_text = BUTTONS['queue'].format(count=scheduled_count)
+        queue_text = f"📋 Очередь ({scheduled_count})"
         buttons.append([
             InlineKeyboardButton(
                 text=queue_text,
@@ -117,45 +118,133 @@ def create_post_preview_keyboard(post_id: int) -> InlineKeyboardMarkup:
 
 
 # =============================================
-# ПЛАНИРОВЩИК
+# ПРОСТОЙ ПЛАНИРОВЩИК
 # =============================================
 
-def create_scheduler_keyboard(post_id: int) -> InlineKeyboardMarkup:
-    """Создает клавиатуру планировщика"""
+def create_simple_scheduler_keyboard(post_id: int) -> InlineKeyboardMarkup:
+    """Создает упрощенный планировщик - дни и время"""
     return InlineKeyboardMarkup(inline_keyboard=[
+        # Дни недели
         [
             InlineKeyboardButton(
-                text=BUTTONS['in_30_min'],
-                callback_data=ScheduleAction(action="quick", post_id=post_id, option="30_min").pack()
+                text="ПН",
+                callback_data=ScheduleAction(action="day", post_id=post_id, day="monday").pack()
             ),
             InlineKeyboardButton(
-                text=BUTTONS['in_1_hour'],
-                callback_data=ScheduleAction(action="quick", post_id=post_id, option="1_hour").pack()
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['tomorrow_9am'],
-                callback_data=ScheduleAction(action="quick", post_id=post_id, option="tomorrow_9am").pack()
+                text="ВТ",
+                callback_data=ScheduleAction(action="day", post_id=post_id, day="tuesday").pack()
             ),
             InlineKeyboardButton(
-                text=BUTTONS['choose_time'],
-                callback_data=ScheduleAction(action="custom", post_id=post_id).pack()
+                text="СР",
+                callback_data=ScheduleAction(action="day", post_id=post_id, day="wednesday").pack()
+            ),
+            InlineKeyboardButton(
+                text="ЧТ",
+                callback_data=ScheduleAction(action="day", post_id=post_id, day="thursday").pack()
             )
         ],
         [
             InlineKeyboardButton(
-                text=BUTTONS['distribute_auto'],
-                callback_data=ScheduleAction(action="distribute", post_id=post_id).pack()
+                text="ПТ",
+                callback_data=ScheduleAction(action="day", post_id=post_id, day="friday").pack()
+            ),
+            InlineKeyboardButton(
+                text="СБ",
+                callback_data=ScheduleAction(action="day", post_id=post_id, day="saturday").pack()
+            ),
+            InlineKeyboardButton(
+                text="ВС",
+                callback_data=ScheduleAction(action="day", post_id=post_id, day="sunday").pack()
+            )
+        ],
+        # Быстрые варианты времени
+        [
+            InlineKeyboardButton(
+                text="🌅 Утро (10:00-12:00)",
+                callback_data=ScheduleAction(action="quick_time", post_id=post_id, time_slot="morning").pack()
             )
         ],
         [
             InlineKeyboardButton(
-                text=BUTTONS['back_to_menu'],
+                text="🌆 Вечер (19:00-22:00)",
+                callback_data=ScheduleAction(action="quick_time", post_id=post_id, time_slot="evening").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🌙 Поздний вечер (23:00-01:00)",
+                callback_data=ScheduleAction(action="quick_time", post_id=post_id, time_slot="night").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="⚡ Через 30 мин",
+                callback_data=ScheduleAction(action="quick", post_id=post_id, time_slot="30min").pack()
+            ),
+            InlineKeyboardButton(
+                text="🕐 Через 1 час",
+                callback_data=ScheduleAction(action="quick", post_id=post_id, time_slot="1hour").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🔙 Назад",
                 callback_data=MenuAction(action="main").pack()
             )
         ]
     ])
+
+
+def create_day_time_keyboard(post_id: int, selected_day: str) -> InlineKeyboardMarkup:
+    """Создает клавиатуру выбора времени для конкретного дня"""
+    day_names = {
+        'monday': 'Понедельник',
+        'tuesday': 'Вторник',
+        'wednesday': 'Среда',
+        'thursday': 'Четверг',
+        'friday': 'Пятница',
+        'saturday': 'Суббота',
+        'sunday': 'Воскресенье'
+    }
+
+    # Получаем расписание для дня из конфига
+    from config import POSTING_SCHEDULE
+    day_schedule = POSTING_SCHEDULE.get(selected_day, [])
+
+    buttons = []
+
+    # Добавляем кнопки времени для выбранного дня
+    for i, slot in enumerate(day_schedule):
+        slot_text = f"🕐 {slot['start']}-{slot['end']}"
+        buttons.append([
+            InlineKeyboardButton(
+                text=slot_text,
+                callback_data=ScheduleAction(
+                    action="schedule_slot",
+                    post_id=post_id,
+                    day=selected_day,
+                    time_slot=str(i)
+                ).pack()
+            )
+        ])
+
+    # Кнопки управления
+    buttons.extend([
+        [
+            InlineKeyboardButton(
+                text="🔙 Назад к дням",
+                callback_data=PostAction(action="schedule", post_id=post_id).pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🏠 В меню",
+                callback_data=MenuAction(action="main").pack()
+            )
+        ]
+    ])
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 # =============================================
