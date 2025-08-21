@@ -24,3 +24,167 @@
 2025-08-20 23:31:00 - services.scheduler_service - INFO - Цикл планировщика отменен
 2025-08-20 23:31:00 - services.scheduler_service - INFO - Планировщик постов остановлен
 2025-08-20 23:31:00 - root - INFO - 🛑 Бот завершил работу
+2025-08-21 15:06:30 - __main__ - INFO - 🚀 Запускаем бота...
+2025-08-21 15:06:34 - services.ai_processor - INFO - Соединение с DeepSeek API успешно
+2025-08-21 15:06:34 - root - INFO - ✅ Подключение к AI сервису проверено
+2025-08-21 15:06:34 - services.scheduler_service - INFO - Планировщик постов запущен
+2025-08-21 15:06:35 - root - INFO - 🚀 Бот успешно запущен
+2025-08-21 15:07:01 - handlers.post_creation - INFO - Получена часть альбома 14046166564144346 (1/...)
+2025-08-21 15:07:01 - handlers.post_creation - INFO - Получена часть альбома 14046166564144346 (2/...)
+2025-08-21 15:07:01 - handlers.post_creation - INFO - Получена часть альбома 14046166564144346 (3/...)
+2025-08-21 15:07:03 - asyncio - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-25' coro=<process_album_and_preview() done, defined at C:\Users\maxim\Desktop\PycharmProjects\Telegram_Post_Bot\handlers\post_creation.py:72> exception=RuntimeError("Task cannot await on itself: <Task pending name='Task-25' coro=<process_album_and_preview() running at C:\\Users\\maxim\\Desktop\\PycharmProjects\\Telegram_Post_Bot\\handlers\\post_creation.py:80>>")>
+Traceback (most recent call last):
+  File "C:\Users\maxim\Desktop\PycharmProjects\Telegram_Post_Bot\handlers\post_creation.py", line 80, in process_album_and_preview
+    await album_timers.pop(media_group_id, None)
+RuntimeError: Task cannot await on itself: <Task pending name='Task-25' coro=<process_album_and_preview() running at C:\Users\maxim\Desktop\PycharmProjects\Telegram_Post_Bot\handlers\post_creation.py:80>>
+2025-08-21 15:08:07 - services.scheduler_service - INFO - Цикл планировщика отменен
+2025-08-21 15:08:07 - services.scheduler_service - INFO - Планировщик постов остановлен
+2025-08-21 15:08:07 - root - INFO - 🛑 Бот завершил работу
+2025-08-21 15:10:02 - __main__ - INFO - 🚀 Запускаем бота...
+2025-08-21 15:10:07 - services.ai_processor - INFO - Соединение с DeepSeek API успешно
+2025-08-21 15:10:07 - root - INFO - ✅ Подключение к AI сервису проверено
+2025-08-21 15:10:07 - services.scheduler_service - INFO - Планировщик постов запущен
+2025-08-21 15:10:08 - root - INFO - 🚀 Бот успешно запущен
+2025-08-21 15:10:17 - handlers.post_creation - INFO - Получена часть альбома 14046168137277602 (1/...)
+2025-08-21 15:10:17 - handlers.post_creation - INFO - Получена часть альбома 14046168137277602 (2/...)
+2025-08-21 15:10:17 - handlers.post_creation - INFO - Получена часть альбома 14046168137277602 (3/...)
+2025-08-21 15:10:19 - handlers.post_creation - INFO - Обрабатываем альбом с текстом: Если хотите погенерить таких же олимпийцев в Hailuo 02, забирайте 500 кредитов за регистрацию. Доста...
+2025-08-21 15:10:19 - services.link_extractor - WARNING - Entity выходит за пределы текста: offset=185, length=2, text_len=186
+2025-08-21 15:10:19 - services.link_extractor - INFO - Извлечено ссылок: 0 обычных + 1 скрытых = 1 всего
+2025-08-21 15:10:19 - services.link_extractor - INFO - Отформатировано 1 ссылок/упоминаний для AI
+2025-08-21 15:10:19 - handlers.post_creation - INFO - Найденные ссылки в альбоме: Текстовая ссылка #1: 'Hailuo 02' -> https://hailuoai.video/
+2025-08-21 15:10:19 - services.ai_processor - INFO - Промпт загружен из prompts/prompt1.txt (кодировка: utf-8)
+2025-08-21 15:10:19 - services.ai_processor - INFO - Отправляем запрос в DeepSeek (тип: style_formatting, длина: 186 символов)
+2025-08-21 15:10:29 - services.ai_processor - INFO - AI обработка завершена успешно (результат: 305 символов)
+2025-08-21 15:10:29 - utils.post_storage - INFO - Добавлен ожидающий пост #1 от пользователя 632260351
+2025-08-21 15:10:29 - handlers.post_creation - INFO - Отправлен превью поста #1 пользователю 632260351
+2025-08-21 15:10:34 - handlers.post_creation - INFO - Получено действие с постом: schedule для поста #1
+2025-08-21 15:10:44 - handlers.scheduler - INFO - Планировщик: quick, post_id: 1, day: None, time_slot: 30min
+2025-08-21 15:10:44 - utils.post_storage - INFO - Запланирован пост #1 на 2025-08-21 19:50:00
+2025-08-21 15:10:44 - utils.post_storage - INFO - Удален ожидающий пост #1
+2025-08-21 15:10:44 - handlers.scheduler - INFO - Пост #1 запланирован на 2025-08-21 19:50:00
+2025-08-21 15:10:56 - handlers.scheduler - INFO - Получено действие с очередью: refresh, post_id: None
+2025-08-21 15:10:57 - handlers.scheduler - ERROR - Ошибка обработки действия с очередью refresh: Telegram server says - Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message
+2025-08-21 15:11:15 - services.ai_processor - INFO - Промпт загружен из prompts/prompt3.txt (кодировка: utf-8)
+2025-08-21 15:12:54 - services.scheduler_service - INFO - Цикл планировщика отменен
+2025-08-21 15:12:54 - services.scheduler_service - INFO - Планировщик постов остановлен
+2025-08-21 15:12:54 - root - INFO - 🛑 Бот завершил работу
+2025-08-21 15:13:00 - __main__ - INFO - 🚀 Запускаем бота...
+2025-08-21 15:13:04 - services.ai_processor - INFO - Соединение с DeepSeek API успешно
+2025-08-21 15:13:04 - root - INFO - ✅ Подключение к AI сервису проверено
+2025-08-21 15:13:04 - services.scheduler_service - INFO - Планировщик постов запущен
+2025-08-21 15:13:04 - root - INFO - 🚀 Бот успешно запущен
+2025-08-21 15:13:11 - handlers.post_creation - INFO - AUTO режим: получено сообщение от пользователя 632260351
+2025-08-21 15:13:11 - services.link_extractor - WARNING - Entity выходит за пределы текста: offset=236, length=2, text_len=237
+2025-08-21 15:13:11 - services.link_extractor - INFO - Извлечено ссылок: 0 обычных + 0 скрытых = 0 всего
+2025-08-21 15:13:11 - handlers.post_creation - INFO - AUTO режим: обрабатываем сообщение: Оп-оп, теперь готовимся к собесам с ChatGPT стало проще — в нейронку завезли интерактивные тесты по ...
+2025-08-21 15:13:11 - services.ai_processor - INFO - Промпт загружен из prompts/prompt2.txt (кодировка: utf-8)
+2025-08-21 15:13:11 - services.ai_processor - INFO - Отправляем запрос в DeepSeek (тип: group_processing, длина: 237 символов)
+2025-08-21 15:13:22 - services.ai_processor - INFO - AI обработка завершена успешно (результат: 424 символов)
+2025-08-21 15:13:22 - utils.post_storage - INFO - Добавлен ожидающий пост #1 от пользователя 632260351
+2025-08-21 15:13:22 - handlers.post_creation - INFO - Отправлен превью поста #1 пользователю 632260351
+2025-08-21 15:13:22 - handlers.post_creation - INFO - AUTO режим: сообщение обработано, отправлен превью
+2025-08-21 15:13:47 - handlers.post_creation - INFO - Получено действие с постом: publish для поста #1
+2025-08-21 15:13:47 - services.publisher - INFO - Публикуем пост #1 в группу -1002065466647
+2025-08-21 15:13:47 - services.publisher - ERROR - Ошибка отправки медиа типа photo: Bot.send_photo() got an unexpected keyword argument 'disable_web_page_preview'
+2025-08-21 15:13:48 - services.publisher - INFO - Одиночное сообщение опубликовано (пост #1)
+2025-08-21 15:13:48 - utils.post_storage - INFO - Удален ожидающий пост #1
+2025-08-21 15:13:48 - handlers.post_creation - INFO - Пост #1 успешно опубликован
+2025-08-21 15:15:16 - services.scheduler_service - INFO - Цикл планировщика отменен
+2025-08-21 15:15:16 - services.scheduler_service - INFO - Планировщик постов остановлен
+2025-08-21 15:15:16 - root - INFO - 🛑 Бот завершил работу
+2025-08-21 23:35:58 - __main__ - INFO - 🚀 Запускаем бота...
+2025-08-21 23:36:02 - services.ai_processor - INFO - Соединение с DeepSeek API успешно
+2025-08-21 23:36:02 - root - INFO - ✅ Подключение к AI сервису проверено
+2025-08-21 23:36:02 - services.scheduler_service - INFO - Планировщик постов запущен
+2025-08-21 23:36:03 - root - INFO - 🚀 Бот успешно запущен
+2025-08-21 23:36:21 - handlers.post_creation - INFO - AUTO режим: получено сообщение от пользователя 632260351
+2025-08-21 23:36:21 - services.link_extractor - WARNING - Entity выходит за пределы текста: offset=236, length=2, text_len=237
+2025-08-21 23:36:21 - services.link_extractor - INFO - Извлечено ссылок: 0 обычных + 0 скрытых = 0 всего
+2025-08-21 23:36:21 - handlers.post_creation - INFO - AUTO режим: обрабатываем сообщение: Оп-оп, теперь готовимся к собесам с ChatGPT стало проще — в нейронку завезли интерактивные тесты по ...
+2025-08-21 23:36:21 - services.ai_processor - INFO - Промпт загружен из prompts/prompt2.txt (кодировка: utf-8)
+2025-08-21 23:36:21 - services.ai_processor - INFO - Отправляем запрос в DeepSeek (тип: group_processing, длина: 237 символов)
+2025-08-21 23:36:33 - services.ai_processor - INFO - AI обработка завершена успешно (результат: 563 символов)
+2025-08-21 23:36:33 - utils.post_storage - INFO - Добавлен ожидающий пост #1 от пользователя 632260351
+2025-08-21 23:36:34 - handlers.post_creation - INFO - Отправлен превью поста #1 пользователю 632260351
+2025-08-21 23:36:34 - handlers.post_creation - INFO - AUTO режим: сообщение обработано, отправлен превью
+2025-08-21 23:36:46 - handlers.post_creation - INFO - Получено действие с постом: schedule для поста #1
+2025-08-21 23:36:48 - handlers.scheduler - INFO - Планировщик: quick_time, post_id: 1, day: None, time_slot: morning
+2025-08-21 23:36:48 - utils.post_storage - INFO - Запланирован пост #1 на 2025-08-22 11:53:00
+2025-08-21 23:36:48 - utils.post_storage - INFO - Удален ожидающий пост #1
+2025-08-21 23:36:49 - handlers.scheduler - INFO - Пост #1 запланирован на 2025-08-22 11:53:00
+2025-08-21 23:36:58 - aiogram.event - ERROR - Cause exception while process update id=923795802 by bot id=7087970913
+TelegramBadRequest: Telegram server says - Bad Request: can't parse entities: Can't find end tag corresponding to start tag "b"
+Traceback (most recent call last):
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 309, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 158, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 25, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 56, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\fsm\middleware.py", line 42, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 276, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 174, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 146, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 141, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\router.py", line 166, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 121, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 43, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\Desktop\PycharmProjects\Telegram_Post_Bot\handlers\menu.py", line 165, in show_queue
+    await callback.message.edit_text(
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\methods\base.py", line 84, in emit
+    return await bot(self)
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\bot.py", line 488, in __call__
+    return await self.session(self, method, timeout=request_timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\base.py", line 254, in __call__
+    return cast(TelegramType, await middleware(bot, method))
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\aiohttp.py", line 189, in make_request
+    response = self.check_response(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\maxim\AppData\Local\Programs\Python\Python311\Lib\site-packages\aiogram\client\session\base.py", line 120, in check_response
+    raise TelegramBadRequest(method=method, message=description)
+aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: can't parse entities: Can't find end tag corresponding to start tag "b"
+2025-08-21 23:37:58 - services.ai_processor - INFO - Промпт загружен из prompts/prompt1.txt (кодировка: utf-8)
+2025-08-21 23:39:12 - services.ai_processor - INFO - Промпт загружен из prompts/prompt3.txt (кодировка: utf-8)
+2025-08-21 23:39:32 - handlers.settings - ERROR - Ошибка просмотра промпта post_improvement: Telegram server says - Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message
+2025-08-21 23:42:20 - services.scheduler_service - INFO - Цикл планировщика отменен
+2025-08-21 23:42:20 - services.scheduler_service - INFO - Планировщик постов остановлен
+2025-08-21 23:42:20 - root - INFO - 🛑 Бот завершил работу

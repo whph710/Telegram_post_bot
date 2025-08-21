@@ -77,7 +77,7 @@ async def process_album_and_preview(media_group_id: str):
         return
 
     album_messages = albums.pop(media_group_id)
-    await album_timers.pop(media_group_id, None)
+    album_timers.pop(media_group_id, None)
 
     if not album_messages:
         return

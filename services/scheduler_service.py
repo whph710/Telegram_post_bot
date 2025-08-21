@@ -58,7 +58,11 @@ class SchedulerService:
 
     async def _check_and_publish_posts(self):
         """Проверяет и публикует готовые посты"""
-        pending_posts = post_storage.get_pending_scheduled_posts()
+        try:
+            pending_posts = post_storage.get_pending_scheduled_posts()
+        except Exception as e:
+            logger.error(f"Ошибка получения постов для публикации: {e}")
+            return
 
         if not pending_posts:
             return
@@ -79,90 +83,13 @@ class SchedulerService:
     async def _publish_scheduled_post(self, post_data: dict) -> bool:
         """Публикует запланированный пост"""
         try:
-            processed_text = post_data['processed_text']
-
-            if post_data.get('original_messages'):
-                # Альбом
-                from services.media_handler import MediaProcessor
-                media_processor = MediaProcessor()
-                messages = post_data['original_messages']
-                media_group = media_processor.build_media_group(messages, processed_text)
-
-                await self.bot.send_media_group(
-                    chat_id=GROUP_ID,
-                    media=media_group.build()
-                )
-
-            elif post_data.get('original_message'):
-                # Одиночное сообщение
-                await self._publish_single_message(post_data['original_message'], processed_text)
-
-            else:
-                # Только текст
-                if processed_text.strip():
-                    await self.bot.send_message(
-                        chat_id=GROUP_ID,
-                        text=processed_text,
-                        parse_mode="HTML",
-                        disable_web_page_preview=True
-                    )
-
-            return True
+            # Используем существующую логику из publisher
+            from services.publisher import publish_post_now
+            return await publish_post_now(post_data)
 
         except Exception as e:
             logger.error(f"Ошибка публикации поста: {e}")
             return False
-
-    async def _publish_single_message(self, message, processed_text: str):
-        """Публикует одиночное сообщение"""
-        from services.media_handler import MediaProcessor
-        media_processor = MediaProcessor()
-        media_info = media_processor.extract_media_info(message)
-
-        if media_info['has_media']:
-            if media_info['type'] in ['photo', 'video', 'document']:
-                media_group = media_processor.build_single_media_group(message, processed_text)
-                await self.bot.send_media_group(
-                    chat_id=GROUP_ID,
-                    media=media_group.build()
-                )
-            elif media_info['type'] == 'animation':
-                await self.bot.send_animation(
-                    chat_id=GROUP_ID,
-                    animation=media_info['file_id'],
-                    caption=processed_text,
-                    parse_mode="HTML",
-                    disable_web_page_preview=True
-                )
-            elif media_info['type'] == 'voice':
-                await self.bot.send_voice(
-                    chat_id=GROUP_ID,
-                    voice=media_info['file_id'],
-                    caption=processed_text,
-                    parse_mode="HTML",
-                    disable_web_page_preview=True
-                )
-            elif media_info['type'] == 'video_note':
-                await self.bot.send_video_note(
-                    chat_id=GROUP_ID,
-                    video_note=media_info['file_id']
-                )
-                if processed_text.strip():
-                    await self.bot.send_message(
-                        chat_id=GROUP_ID,
-                        text=processed_text,
-                        parse_mode="HTML",
-                        disable_web_page_preview=True
-                    )
-        else:
-            # Только текст
-            if processed_text.strip():
-                await self.bot.send_message(
-                    chat_id=GROUP_ID,
-                    text=processed_text,
-                    parse_mode="HTML",
-                    disable_web_page_preview=True
-                )
 
     def schedule_post(
             self,

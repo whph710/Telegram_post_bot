@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 import logging
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 import random
 from aiogram import Router, F
-from aiogram.types import CallbackQuery, Message
-from aiogram.filters import StateFilter
+from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 
 from states import PostCreation, Menu
 from keyboards import (
     ScheduleAction, QueueAction,
     create_simple_scheduler_keyboard, create_back_to_menu_keyboard,
-    create_queue_item_keyboard, create_day_time_keyboard
+    create_queue_item_keyboard
 )
 from config import ADMIN_ID, MESSAGES, POSTING_SCHEDULE
 from utils.post_storage import post_storage
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 @router.callback_query(ScheduleAction.filter())
 async def handle_schedule_action(callback: CallbackQuery, callback_data: ScheduleAction, state: FSMContext):
-    """Обработчик действий простого планировщика"""
+    """Обработчик действий планировщика"""
     action = callback_data.action
     post_id = callback_data.post_id
     day = callback_data.day
@@ -42,9 +41,14 @@ async def handle_schedule_action(callback: CallbackQuery, callback_data: Schedul
         return
 
     try:
-        if action == "day":
-            # Выбран день - показываем время для этого дня
-            await handle_day_selection(callback, post_id, day, state)
+        if action == "none":
+            # Пустое действие (декоративные кнопки)
+            await callback.answer()
+            return
+
+        elif action == "day_morning":
+            # Планирование на день утром (упрощенный вариант)
+            await handle_day_schedule(callback, post_id, day, "morning", state)
 
         elif action == "quick_time":
             # Быстрый выбор времени (утро/вечер/ночь)
@@ -53,10 +57,6 @@ async def handle_schedule_action(callback: CallbackQuery, callback_data: Schedul
         elif action == "quick":
             # Очень быстрый выбор (30 мин, 1 час)
             await handle_very_quick_schedule(callback, post_id, time_slot, state)
-
-        elif action == "schedule_slot":
-            # Финальное планирование в конкретный слот
-            await handle_slot_schedule(callback, post_id, day, time_slot, state)
 
         else:
             logger.warning(f"Неизвестное действие планировщика: {action}")
@@ -67,45 +67,73 @@ async def handle_schedule_action(callback: CallbackQuery, callback_data: Schedul
         await callback.answer("❌ Произошла ошибка", show_alert=True)
 
 
-async def handle_day_selection(callback: CallbackQuery, post_id: int, selected_day: str, state: FSMContext):
-    """Обрабатывает выбор дня недели"""
+async def handle_day_schedule(callback: CallbackQuery, post_id: int, selected_day: str, time_period: str,
+                              state: FSMContext):
+    """Планирует пост на конкретный день в определенное время"""
     try:
-        day_names = {
-            'monday': 'Понедельник',
-            'tuesday': 'Вторник',
-            'wednesday': 'Среда',
-            'thursday': 'Четверг',
-            'friday': 'Пятница',
-            'saturday': 'Суббота',
-            'sunday': 'Воскресенье'
-        }
+        # Находим следующий такой день
+        now = datetime.now()
+        weekday_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        target_weekday = weekday_names.index(selected_day)
 
-        day_name = day_names.get(selected_day, selected_day)
+        # Ищем ближайший такой день недели
+        current_weekday = now.weekday()
+        days_ahead = (target_weekday - current_weekday) % 7
 
-        # Сохраняем выбранный день
-        await state.update_data(scheduling_post_id=post_id, selected_day=selected_day)
+        if days_ahead == 0:
+            days_ahead = 7  # Следующая неделя если сегодня тот же день
 
-        schedule_text = (
-            f"📅 **{day_name.upper()}**\n\n"
-            f"Выберите время для публикации:"
+        target_date = now + timedelta(days=days_ahead)
+
+        # Получаем расписание для дня
+        day_schedule = POSTING_SCHEDULE.get(selected_day, [])
+        if not day_schedule:
+            await callback.answer("❌ Нет расписания для этого дня", show_alert=True)
+            return
+
+        # Выбираем случайный слот из доступных
+        slot = random.choice(day_schedule)
+
+        # Генерируем случайное время в пределах слота
+        start_time = datetime.strptime(slot['start'], '%H:%M').time()
+        end_time = datetime.strptime(slot['end'], '%H:%M').time()
+
+        # Обработка перехода через полночь
+        if end_time < start_time:
+            end_hour = end_time.hour + 24
+        else:
+            end_hour = end_time.hour
+
+        # Генерируем случайное время
+        start_minutes = start_time.hour * 60 + start_time.minute
+        end_minutes = end_hour * 60 + end_time.minute
+
+        random_minutes = random.randint(start_minutes, end_minutes - 1)
+        random_hour = random_minutes // 60
+        random_minute = random_minutes % 60
+
+        # Обработка перехода через полночь
+        if random_hour >= 24:
+            random_hour -= 24
+            target_date += timedelta(days=1)
+
+        schedule_time = target_date.replace(
+            hour=random_hour,
+            minute=random_minute,
+            second=0,
+            microsecond=0
         )
 
-        await callback.message.edit_text(
-            text=schedule_text,
-            reply_markup=create_day_time_keyboard(post_id, selected_day),
-            parse_mode="Markdown"
-        )
-        await callback.answer()
+        await schedule_post_and_finish(callback, post_id, schedule_time, state)
 
     except Exception as e:
-        logger.error(f"Ошибка выбора дня: {e}")
-        await callback.answer("❌ Ошибка", show_alert=True)
+        logger.error(f"Ошибка планирования на день: {e}")
+        await callback.answer("❌ Ошибка планирования", show_alert=True)
 
 
 async def handle_quick_time_selection(callback: CallbackQuery, post_id: int, time_slot: str, state: FSMContext):
     """Обрабатывает быстрый выбор времени (утро/вечер/ночь)"""
     try:
-        # Определяем следующий подходящий день и время
         now = datetime.now()
         schedule_time = None
 
@@ -122,15 +150,13 @@ async def handle_quick_time_selection(callback: CallbackQuery, post_id: int, tim
         start_hour, end_hour = time_ranges[time_slot]
 
         # Ищем ближайший подходящий день
-        for days_ahead in range(7):  # Ищем в течение недели
+        for days_ahead in range(7):
             check_date = now + timedelta(days=days_ahead)
             weekday = check_date.weekday()
 
-            # Маппинг дней недели
             weekday_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
             day_name = weekday_names[weekday]
 
-            # Проверяем, есть ли подходящие слоты в этот день
             day_schedule = POSTING_SCHEDULE.get(day_name, [])
 
             for slot in day_schedule:
@@ -143,10 +169,8 @@ async def handle_quick_time_selection(callback: CallbackQuery, post_id: int, tim
 
                 # Проверяем пересечение с нужным временем
                 if time_slot == 'night' and start_hour == 23:
-                    # Для ночного времени особая логика
                     if (slot_start_hour >= 23 or slot_end_hour <= 1 or
                             (slot_start_hour <= 23 and slot_end_hour >= 24)):
-                        # Генерируем случайное время в пределах слота
                         if slot_start_hour >= 23:
                             random_hour = random.randint(23, min(23, slot_end_hour))
                         else:
@@ -157,10 +181,8 @@ async def handle_quick_time_selection(callback: CallbackQuery, post_id: int, tim
                                                            microsecond=0)
                         break
                 else:
-                    # Обычная логика для утра и вечера
                     if (slot_start_hour <= start_hour and slot_end_hour >= end_hour) or \
                             (slot_start_hour < end_hour and slot_end_hour > start_hour):
-                        # Генерируем случайное время в пересечении
                         actual_start = max(slot_start_hour, start_hour)
                         actual_end = min(slot_end_hour, end_hour)
 
@@ -182,7 +204,6 @@ async def handle_quick_time_selection(callback: CallbackQuery, post_id: int, tim
             await callback.answer("❌ Не найдено подходящее время в расписании", show_alert=True)
             return
 
-        # Планируем пост
         await schedule_post_and_finish(callback, post_id, schedule_time, state)
 
     except Exception as e:
@@ -215,78 +236,6 @@ async def handle_very_quick_schedule(callback: CallbackQuery, post_id: int, time
     except Exception as e:
         logger.error(f"Ошибка быстрого планирования: {e}")
         await callback.answer("❌ Ошибка", show_alert=True)
-
-
-async def handle_slot_schedule(callback: CallbackQuery, post_id: int, day: str, time_slot_index: str,
-                               state: FSMContext):
-    """Обрабатывает планирование в конкретный временной слот"""
-    try:
-        # Получаем расписание для дня
-        day_schedule = POSTING_SCHEDULE.get(day, [])
-        slot_index = int(time_slot_index)
-
-        if slot_index >= len(day_schedule):
-            await callback.answer("❌ Неверный временной слот", show_alert=True)
-            return
-
-        slot = day_schedule[slot_index]
-
-        # Находим следующий такой день
-        now = datetime.now()
-        weekday_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-        target_weekday = weekday_names.index(day)
-
-        # Ищем ближайший такой день недели
-        current_weekday = now.weekday()
-        days_ahead = (target_weekday - current_weekday) % 7
-
-        if days_ahead == 0:
-            # Сегодня - проверим, не прошло ли время
-            slot_start_time = datetime.strptime(slot['start'], '%H:%M').time()
-            today_slot_time = now.replace(hour=slot_start_time.hour, minute=slot_start_time.minute, second=0,
-                                          microsecond=0)
-
-            if today_slot_time <= now:
-                days_ahead = 7  # Следующая неделя
-
-        target_date = now + timedelta(days=days_ahead)
-
-        # Генерируем случайное время в пределах слота
-        start_time = datetime.strptime(slot['start'], '%H:%M').time()
-        end_time = datetime.strptime(slot['end'], '%H:%M').time()
-
-        # Обработка перехода через полночь
-        if end_time < start_time:
-            # Слот переходит через полночь
-            end_hour = end_time.hour + 24
-        else:
-            end_hour = end_time.hour
-
-        # Генерируем случайное время
-        start_minutes = start_time.hour * 60 + start_time.minute
-        end_minutes = end_hour * 60 + end_time.minute
-
-        random_minutes = random.randint(start_minutes, end_minutes - 1)
-        random_hour = random_minutes // 60
-        random_minute = random_minutes % 60
-
-        # Обработка перехода через полночь
-        if random_hour >= 24:
-            random_hour -= 24
-            target_date += timedelta(days=1)
-
-        schedule_time = target_date.replace(
-            hour=random_hour,
-            minute=random_minute,
-            second=0,
-            microsecond=0
-        )
-
-        await schedule_post_and_finish(callback, post_id, schedule_time, state)
-
-    except Exception as e:
-        logger.error(f"Ошибка планирования в слот: {e}")
-        await callback.answer("❌ Ошибка планирования", show_alert=True)
 
 
 async def schedule_post_and_finish(callback: CallbackQuery, post_id: int, schedule_time: datetime, state: FSMContext):
