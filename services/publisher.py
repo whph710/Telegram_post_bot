@@ -31,22 +31,20 @@ async def publish_post_now(post_data: Dict[str, Any]) -> bool:
             media_info = media_processor.extract_media_info(first_message)
 
             if media_info['type'] == 'photo':
-                # Отправляем фото с подписью
+                # ИСПРАВЛЕНО: убираем disable_web_page_preview для send_photo
                 await bot.send_photo(
                     chat_id=GROUP_ID,
                     photo=media_info['file_id'],
                     caption=processed_text,
-                    parse_mode="HTML",
-                    disable_web_page_preview=True
+                    parse_mode="HTML"
                 )
             elif media_info['type'] == 'video':
-                # Отправляем видео с подписью
+                # ИСПРАВЛЕНО: убираем disable_web_page_preview для send_video
                 await bot.send_video(
                     chat_id=GROUP_ID,
                     video=media_info['file_id'],
                     caption=processed_text,
-                    parse_mode="HTML",
-                    disable_web_page_preview=True
+                    parse_mode="HTML"
                 )
             else:
                 # Для других типов - сначала текст, потом медиа
@@ -106,48 +104,48 @@ async def _send_single_media(message, caption: str):
 
     try:
         if media_info['type'] == 'photo':
+            # ИСПРАВЛЕНО: убираем disable_web_page_preview для send_photo
             await bot.send_photo(
                 chat_id=GROUP_ID,
                 photo=media_info['file_id'],
                 caption=caption,
-                parse_mode="HTML",
-                disable_web_page_preview=True
+                parse_mode="HTML"
             )
 
         elif media_info['type'] == 'video':
+            # ИСПРАВЛЕНО: убираем disable_web_page_preview для send_video
             await bot.send_video(
                 chat_id=GROUP_ID,
                 video=media_info['file_id'],
                 caption=caption,
-                parse_mode="HTML",
-                disable_web_page_preview=True
+                parse_mode="HTML"
             )
 
         elif media_info['type'] == 'document':
+            # ИСПРАВЛЕНО: убираем disable_web_page_preview для send_document
             await bot.send_document(
                 chat_id=GROUP_ID,
                 document=media_info['file_id'],
                 caption=caption,
-                parse_mode="HTML",
-                disable_web_page_preview=True
+                parse_mode="HTML"
             )
 
         elif media_info['type'] == 'animation':
+            # ИСПРАВЛЕНО: убираем disable_web_page_preview для send_animation
             await bot.send_animation(
                 chat_id=GROUP_ID,
                 animation=media_info['file_id'],
                 caption=caption,
-                parse_mode="HTML",
-                disable_web_page_preview=True
+                parse_mode="HTML"
             )
 
         elif media_info['type'] == 'voice':
+            # ИСПРАВЛЕНО: убираем disable_web_page_preview для send_voice
             await bot.send_voice(
                 chat_id=GROUP_ID,
                 voice=media_info['file_id'],
                 caption=caption,
-                parse_mode="HTML",
-                disable_web_page_preview=True
+                parse_mode="HTML"
             )
 
         elif media_info['type'] == 'video_note':

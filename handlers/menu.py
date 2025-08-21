@@ -151,23 +151,67 @@ async def show_queue(callback: CallbackQuery, state: FSMContext):
             logger.error(f"Ошибка форматирования времени для поста {post.get('id')}: {e}")
             formatted_time = "Ошибка времени"
 
+        # ИСПРАВЛЕНО: Убираем лишние HTML теги для корректного отображения
         queue_text_lines.append(
             f"📅 {idx}. {formatted_time}\n"
-            f"   \"{post_preview}\"\n"
+            f"   \"{post_preview}\""
         )
 
-    queue_text = "\n".join(queue_text_lines)
+    queue_text = "\n\n".join(queue_text_lines)
 
     # Ограничиваем длину сообщения
     if len(queue_text) > 4000:
         queue_text = queue_text[:3900] + "\n\n... (список обрезан)"
 
+    # ИСПРАВЛЕНО: Используем обычный текст вместо HTML для избежания ошибок парсинга
     await callback.message.edit_text(
         text=queue_text,
-        reply_markup=create_queue_keyboard(),
-        parse_mode="HTML"
+        reply_markup=create_queue_keyboard()
     )
     await callback.answer()
+
+
+# ДОБАВЛЕНО: Обработчик для неизвестных callback'ов из логов
+@router.callback_query(F.data.startswith("post:"))
+async def handle_post_callbacks(callback: CallbackQuery):
+    """Обработка callback'ов постов, которые попадают в главное меню"""
+    callback_parts = callback.data.split(":")
+
+    if len(callback_parts) >= 3:
+        action = callback_parts[1]
+        try:
+            post_id = int(callback_parts[2])
+        except ValueError:
+            await callback.answer("❌ Неверный ID поста", show_alert=True)
+            return
+
+        if action == "publish":
+            # Перенаправляем на обработчик публикации
+            from handlers.post_creation import handle_publish_now
+            post_data = post_storage.get_pending_post(post_id)
+            if post_data:
+                await handle_publish_now(callback, post_data, post_id)
+            else:
+                await callback.answer("❌ Пост не найден", show_alert=True)
+
+        elif action == "delete":
+            # Перенаправляем на обработчик удаления
+            success = post_storage.remove_pending_post(post_id)
+            if success:
+                await callback.message.delete()
+                await callback.answer("🗑 Пост удален")
+            else:
+                await callback.answer("❌ Пост не найден", show_alert=True)
+
+        elif action == "schedule":
+            # Перенаправляем на планировщик
+            await callback.answer("⏰ Используйте кнопку 'Отложить пост' в превью")
+
+        else:
+            logger.warning(f"Неизвестное действие с постом: {action}")
+            await callback.answer("❌ Неизвестное действие", show_alert=True)
+    else:
+        await callback.answer("❌ Неверный формат callback", show_alert=True)
 
 
 # Обработка неизвестных callback'ов в меню

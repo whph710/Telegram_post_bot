@@ -140,6 +140,36 @@ class AIProcessor:
         for pattern in unwanted_patterns:
             cleaned_text = re.sub(pattern, '', cleaned_text, flags=re.IGNORECASE)
 
+        # ИСПРАВЛЕНО: Проверяем и исправляем незакрытые теги
+        # Находим все открывающие теги
+        open_tags = re.findall(r'<(b|i|u|s|code)(?:\s[^>]*)?>', cleaned_text, re.IGNORECASE)
+        close_tags = re.findall(r'</(b|i|u|s|code)>', cleaned_text, re.IGNORECASE)
+
+        # Подсчитываем теги
+        from collections import Counter
+        open_count = Counter([tag.lower() for tag in open_tags])
+        close_count = Counter([tag.lower() for tag in close_tags])
+
+        # Добавляем недостающие закрывающие теги
+        for tag, count in open_count.items():
+            missing = count - close_count.get(tag, 0)
+            if missing > 0:
+                for _ in range(missing):
+                    cleaned_text += f'</{tag}>'
+                logger.warning(f"Добавлен недостающий закрывающий тег: </{tag}>")
+
+        # Удаляем лишние закрывающие теги
+        for tag, count in close_count.items():
+            excess = count - open_count.get(tag, 0)
+            if excess > 0:
+                # Удаляем лишние закрывающие теги с конца
+                for _ in range(excess):
+                    pattern = f'</{tag}>'
+                    pos = cleaned_text.rfind(pattern)
+                    if pos != -1:
+                        cleaned_text = cleaned_text[:pos] + cleaned_text[pos + len(pattern):]
+                        logger.warning(f"Удален лишний закрывающий тег: </{tag}>")
+
         # Нормализация пробелов
         cleaned_text = re.sub(r'\n\s*\n', '\n\n', cleaned_text)
         cleaned_text = re.sub(r'[ \t]+', ' ', cleaned_text)
@@ -202,6 +232,7 @@ class AIProcessor:
 Обязательно сохрани все ссылки в правильном HTML формате.
 ВАЖНО: НЕ используй теги <p>, <div>, <html>, <!doctype> и другие структурные теги!
 Используй только теги: <a>, <b>, <i>, <u>, <s>, <code>, <pre>
+ОБЯЗАТЕЛЬНО закрывай все открытые теги!
 """
 
             logger.info(f"Отправляем запрос в DeepSeek (тип: {prompt_type}, длина: {len(text)} символов)")

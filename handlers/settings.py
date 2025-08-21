@@ -323,6 +323,43 @@ async def handle_group_change(message: Message, state: FSMContext):
         await message.reply("❌ Ошибка обработки ID")
 
 
+# ИСПРАВЛЕНО: Обработка возврата к настройкам через MenuAction
+@router.callback_query(F.data == "menu:settings")
+async def handle_back_to_settings_via_menu(callback: CallbackQuery, state: FSMContext):
+    """Обработка возврата к настройкам через MenuAction"""
+    await show_settings_from_callback(callback, state)
+
+
+async def show_settings_from_callback(callback: CallbackQuery, state: FSMContext):
+    """Вспомогательная функция для показа настроек"""
+    await state.set_state(Settings.main)
+
+    # Получаем информацию об админе
+    admin_username = "admin"  # Заглушка
+    admin_id = ADMIN_ID
+    group_name = f"Группа {GROUP_ID}"  # Заглушка
+
+    settings_text = (
+        f"⚙️ **НАСТРОЙКИ БОТА**\n\n"
+        f"👤 Текущий админ: @{admin_username} ({admin_id})\n"
+        f"📢 Группа для постов: {group_name}\n"
+        f"ID: `{GROUP_ID}`\n\n"
+        f"Выберите что настроить:"
+    )
+
+    await callback.message.edit_text(
+        text=settings_text,
+        reply_markup=create_settings_keyboard(
+            admin_username=admin_username,
+            admin_id=admin_id,
+            group_name=group_name,
+            group_id=GROUP_ID
+        ),
+        parse_mode="Markdown"
+    )
+    await callback.answer()
+
+
 # Обработка неизвестных callback'ов в настройках
 @router.callback_query(StateFilter(Settings))
 async def handle_unknown_settings_callback(callback: CallbackQuery):

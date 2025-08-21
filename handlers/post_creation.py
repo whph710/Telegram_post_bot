@@ -77,7 +77,11 @@ async def process_album_and_preview(media_group_id: str):
         return
 
     album_messages = albums.pop(media_group_id)
-    album_timers.pop(media_group_id, None)
+    # ИСПРАВЛЕНО: убираем await для pop, так как это не awaitable
+    if media_group_id in album_timers:
+        timer_task = album_timers.pop(media_group_id)
+        if timer_task and not timer_task.done():
+            timer_task.cancel()
 
     if not album_messages:
         return
@@ -300,7 +304,7 @@ async def handle_schedule_start(callback: CallbackQuery, state: FSMContext, post
         await state.set_state(PostCreation.scheduling)
         await state.update_data(scheduling_post_id=post_id)
 
-        # Импортируем функцию из scheduler
+        # Импортируем функцию из keyboards
         from keyboards import create_simple_scheduler_keyboard
 
         schedule_text = (
