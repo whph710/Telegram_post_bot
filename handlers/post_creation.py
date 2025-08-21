@@ -227,12 +227,12 @@ async def handle_post_improvement(message: Message, post_id: int):
 
 
 # =============================================
-# CALLBACK ОБРАБОТЧИКИ
+# CALLBACK ОБРАБОТЧИКИ - ИСПРАВЛЕНО!
 # =============================================
 
 @router.callback_query(PostAction.filter())
 async def handle_post_action(callback: CallbackQuery, callback_data: PostAction, state: FSMContext):
-    """Обработчик действий с постом"""
+    """Обработчик действий с постом - ИСПРАВЛЕННЫЙ"""
     post_id = callback_data.post_id
     action = callback_data.action
 
@@ -250,8 +250,9 @@ async def handle_post_action(callback: CallbackQuery, callback_data: PostAction,
             await handle_publish_now(callback, post_data, post_id)
 
         elif action == "schedule":
-            # Переход к планированию
-            await handle_schedule_request(callback, state, post_id)
+            # Переход к планированию - ИСПРАВЛЕНО!
+            from handlers.scheduler import show_scheduler
+            await show_scheduler(callback, state, post_id)
 
         elif action == "edit":
             # Доработка поста
@@ -291,18 +292,6 @@ async def handle_publish_now(callback: CallbackQuery, post_data: dict, post_id: 
     except Exception as e:
         logger.error(f"Ошибка при публикации поста #{post_id}: {e}")
         await callback.answer("❌ Ошибка публикации", show_alert=True)
-
-
-async def handle_schedule_request(callback: CallbackQuery, state: FSMContext, post_id: int):
-    """Обрабатывает запрос на планирование поста"""
-    try:
-        from handlers.scheduler import show_scheduler
-        await show_scheduler(callback, state, post_id)
-        logger.info(f"Переход к планированию поста #{post_id}")
-
-    except Exception as e:
-        logger.error(f"Ошибка перехода к планированию поста #{post_id}: {e}")
-        await callback.answer("❌ Ошибка перехода к планированию", show_alert=True)
 
 
 async def handle_edit_request(callback: CallbackQuery, post_id: int):
