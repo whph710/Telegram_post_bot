@@ -4,6 +4,20 @@ import logging
 import sys
 import os
 
+# Исправляем кодировку консоли для Windows
+if sys.platform.startswith('win'):
+    import locale
+    import codecs
+
+    # Принудительно устанавливаем UTF-8 для консоли
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    else:
+        # Для старых версий Python
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+
 from bot import bot, dp
 from config import ADMIN_ID, MESSAGES, SETTINGS, validate_config, get_config_summary
 

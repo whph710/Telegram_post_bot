@@ -2,3 +2,4 @@ aiogram==3.13.1
 python-dotenv==1.0.1
 openai==1.57.0
 httpx==0.28.1
+asyncio-mqtt==0.16.2

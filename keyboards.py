@@ -64,113 +64,6 @@ def create_main_menu() -> InlineKeyboardMarkup:
         )],
         [
             InlineKeyboardButton(
-                text="──── СИСТЕМА ────",
-                callback_data=SettingsAction(action="none").pack()
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['change_admin'],
-                callback_data=SettingsAction(action="change_admin").pack()
-            ),
-            InlineKeyboardButton(
-                text=BUTTONS['change_group'],
-                callback_data=SettingsAction(action="change_group").pack()
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['show_stats'],
-                callback_data=SettingsAction(action="stats").pack()
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['back_to_menu'],
-                callback_data=MenuAction(action="main").pack()
-            )
-        ]
-    ])
-
-
-# =============================================
-# РЕДАКТИРОВАНИЕ ПРОМПТОВ
-# =============================================
-
-def create_prompt_edit_keyboard(prompt_type: str) -> InlineKeyboardMarkup:
-    """Создает клавиатуру для редактирования промпта"""
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['view_current_prompt'],
-                callback_data=PromptAction(action="view", prompt_type=prompt_type).pack()
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['edit_prompt'],
-                callback_data=PromptAction(action="edit", prompt_type=prompt_type).pack()
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['reset_prompt'],
-                callback_data=PromptAction(action="reset", prompt_type=prompt_type).pack()
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['back_to_settings'],
-                callback_data=MenuAction(action="settings").pack()
-            )
-        ]
-    ])
-
-
-# =============================================
-# ПОДТВЕРЖДЕНИЯ
-# =============================================
-
-def create_admin_confirm_keyboard(new_admin_id: int) -> InlineKeyboardMarkup:
-    """Создает клавиатуру подтверждения смены админа"""
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['confirm_yes'],
-                callback_data=AdminAction(action="confirm", admin_id=new_admin_id).pack()
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['confirm_no'],
-                callback_data=MenuAction(action="settings").pack()
-            )
-        ]
-    ])
-
-
-def create_back_to_menu_keyboard() -> InlineKeyboardMarkup:
-    """Создает простую клавиатуру с кнопкой "Назад в меню" """
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['back_to_menu'],
-                callback_data=MenuAction(action="main").pack()
-            )
-        ]
-    ])
-
-
-def create_back_to_settings_keyboard() -> InlineKeyboardMarkup:
-    """Создает клавиатуру с кнопкой "Назад к настройкам" """
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text=BUTTONS['back_to_settings'],
-                callback_data=MenuAction(action="settings").pack()
-            )
-        ]
-    ])(
                 text=BUTTONS['auto_mode'],
                 callback_data=MenuAction(action="auto_mode_info").pack()
             ),
@@ -404,4 +297,212 @@ def create_settings_keyboard(admin_username: str, admin_id: int, group_name: str
             )
         ],
         [
-            InlineKeyboardButton
+            InlineKeyboardButton(
+                text="──── СИСТЕМА ────",
+                callback_data=SettingsAction(action="none").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['change_admin'],
+                callback_data=SettingsAction(action="change_admin").pack()
+            ),
+            InlineKeyboardButton(
+                text=BUTTONS['change_group'],
+                callback_data=SettingsAction(action="change_group").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['show_stats'],
+                callback_data=SettingsAction(action="stats").pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['back_to_menu'],
+                callback_data=MenuAction(action="main").pack()
+            )
+        ]
+    ])
+
+
+# =============================================
+# РЕДАКТИРОВАНИЕ ПРОМПТОВ
+# =============================================
+
+def create_prompt_edit_keyboard(prompt_type: str) -> InlineKeyboardMarkup:
+    """Создает клавиатуру для редактирования промпта"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['view_current_prompt'],
+                callback_data=PromptAction(action="view", prompt_type=prompt_type).pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['edit_prompt'],
+                callback_data=PromptAction(action="edit", prompt_type=prompt_type).pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['reset_prompt'],
+                callback_data=PromptAction(action="reset", prompt_type=prompt_type).pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['back_to_settings'],
+                callback_data=MenuAction(action="settings").pack()
+            )
+        ]
+    ])
+
+
+# =============================================
+# ПОДТВЕРЖДЕНИЯ
+# =============================================
+
+def create_admin_confirm_keyboard(new_admin_id: int) -> InlineKeyboardMarkup:
+    """Создает клавиатуру подтверждения смены админа"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['confirm_yes'],
+                callback_data=AdminAction(action="confirm", admin_id=new_admin_id).pack()
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['confirm_no'],
+                callback_data=MenuAction(action="settings").pack()
+            )
+        ]
+    ])
+
+
+# =============================================
+# НАВИГАЦИЯ
+# =============================================
+
+def create_back_to_menu_keyboard() -> InlineKeyboardMarkup:
+    """Создает простую клавиатуру с кнопкой "Назад в меню" """
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['back_to_menu'],
+                callback_data=MenuAction(action="main").pack()
+            )
+        ]
+    ])
+
+
+def create_back_to_settings_keyboard() -> InlineKeyboardMarkup:
+    """Создает клавиатуру с кнопкой "Назад к настройкам" """
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['back_to_settings'],
+                callback_data=MenuAction(action="settings").pack()
+            )
+        ]
+    ])
+
+
+def create_back_to_queue_keyboard() -> InlineKeyboardMarkup:
+    """Создает клавиатуру с кнопкой "Назад к очереди" """
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=BUTTONS['back_to_queue'],
+                callback_data=MenuAction(action="queue").pack()
+            )
+        ]
+    ])
+
+
+# =============================================
+# ДОПОЛНИТЕЛЬНЫЕ КЛАВИАТУРЫ
+# =============================================
+
+def create_confirm_keyboard(callback_data: str, confirm_text: str = "✅ Да",
+                            cancel_text: str = "❌ Отмена",
+                            cancel_callback: str = None) -> InlineKeyboardMarkup:
+    """Создает универсальную клавиатуру подтверждения"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text=confirm_text,
+                callback_data=callback_data
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=cancel_text,
+                callback_data=cancel_callback or MenuAction(action="main").pack()
+            )
+        ]
+    ])
+
+
+def create_loading_keyboard() -> InlineKeyboardMarkup:
+    """Создает заглушечную клавиатуру во время обработки"""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text="⏳ Обработка...",
+                callback_data="loading"
+            )
+        ]
+    ])
+
+
+# =============================================
+# УТИЛИТЫ ДЛЯ КЛАВИАТУР
+# =============================================
+
+def add_navigation_buttons(keyboard: List[List[InlineKeyboardButton]],
+                           back_to: str = "main") -> List[List[InlineKeyboardButton]]:
+    """Добавляет навигационные кнопки в существующую клавиатуру"""
+    if back_to == "main":
+        keyboard.append([
+            InlineKeyboardButton(
+                text=BUTTONS['back_to_menu'],
+                callback_data=MenuAction(action="main").pack()
+            )
+        ])
+    elif back_to == "settings":
+        keyboard.append([
+            InlineKeyboardButton(
+                text=BUTTONS['back_to_settings'],
+                callback_data=MenuAction(action="settings").pack()
+            )
+        ])
+    elif back_to == "queue":
+        keyboard.append([
+            InlineKeyboardButton(
+                text=BUTTONS['back_to_queue'],
+                callback_data=MenuAction(action="queue").pack()
+            )
+        ])
+
+    return keyboard
+
+
+def create_empty_callback_button(text: str) -> InlineKeyboardButton:
+    """Создает декоративную кнопку без действия"""
+    return InlineKeyboardButton(
+        text=text,
+        callback_data=SettingsAction(action="none").pack()
+    )
+
+
+def split_keyboard_rows(buttons: List[InlineKeyboardButton],
+                        buttons_per_row: int = 2) -> List[List[InlineKeyboardButton]]:
+    """Разбивает кнопки на строки"""
+    rows = []
+    for i in range(0, len(buttons), buttons_per_row):
+        rows.append(buttons[i:i + buttons_per_row])
+    return rows
