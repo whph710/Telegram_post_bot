@@ -43,37 +43,29 @@ async def handle_schedule_action(callback: CallbackQuery, callback_data: Schedul
 
     try:
         if action == "none":
-            # Планируем пост
-        scheduled_id = post_storage.schedule_post(
-            processed_text=post_data['processed_text'],
-            publish_time=schedule_time,
-            user_id=post_data['user_id'],
-            original_message=post_data.get('original_message'),
-            original_messages=post_data.get('original_messages')
-        )
+            # Пустое действие (декоративные кнопки)
+            await callback.answer()
+            return
 
-        # Удаляем из ожидающих
-        post_storage.remove_pending_post(post_id)
+        elif action == "day_morning":
+            # Планирование на день утром (упрощенный вариант)
+            await handle_day_schedule(callback, post_id, day, "morning", state)
 
-        # Форматируем время для пользователя
-        formatted_time = time_slot_manager.format_datetime_for_user(schedule_time)
+        elif action == "quick_time":
+            # Быстрый выбор времени (утро/вечер/ночь)
+            await handle_quick_time_selection(callback, post_id, time_slot, state)
 
-        await callback.message.edit_text(
-            text=f"✅ **ПОСТ ЗАПЛАНИРОВАН**\n\n"
-                 f"📅 Время публикации: **{formatted_time}**\n\n"
-                 f"Пост будет автоматически опубликован в указанное время.",
-            reply_markup=create_back_to_menu_keyboard(),
-            parse_mode="Markdown"
-        )
-        await callback.answer(f"✅ Запланировано на {formatted_time}")
+        elif action == "quick":
+            # Очень быстрый выбор (30 мин, 1 час)
+            await handle_very_quick_schedule(callback, post_id, time_slot, state)
 
-        # Возвращаем в главное меню
-        await state.set_state(Menu.main)
-        logger.info(f"Пост #{post_id} запланирован на {schedule_time}")
+        else:
+            logger.warning(f"Неизвестное действие планировщика: {action}")
+            await callback.answer("❌ Неизвестное действие", show_alert=True)
 
     except Exception as e:
-        logger.error(f"Ошибка завершения планирования: {e}")
-        await callback.answer("❌ Ошибка планирования", show_alert=True)
+        logger.error(f"Ошибка обработки действия планировщика {action}: {e}")
+        await callback.answer("❌ Произошла ошибка", show_alert=True)
 
 
 # =============================================
@@ -246,29 +238,7 @@ def find_next_available_slot(target_time: datetime) -> datetime:
                 random_offset = random.randint(0, int(slot_duration) // 60)  # В минутах
                 return slot_start + timedelta(minutes=random_offset)
 
-    return None #Пустое действие (декоративные кнопки)
-            await callback.answer()
-            return
-
-        elif action == "day_morning":
-            # Планирование на день утром (упрощенный вариант)
-            await handle_day_schedule(callback, post_id, day, "morning", state)
-
-        elif action == "quick_time":
-            # Быстрый выбор времени (утро/вечер/ночь)
-            await handle_quick_time_selection(callback, post_id, time_slot, state)
-
-        elif action == "quick":
-            # Очень быстрый выбор (30 мин, 1 час)
-            await handle_very_quick_schedule(callback, post_id, time_slot, state)
-
-        else:
-            logger.warning(f"Неизвестное действие планировщика: {action}")
-            await callback.answer("❌ Неизвестное действие", show_alert=True)
-
-    except Exception as e:
-        logger.error(f"Ошибка обработки действия планировщика {action}: {e}")
-        await callback.answer("❌ Произошла ошибка", show_alert=True)
+    return None
 
 
 async def handle_day_schedule(callback: CallbackQuery, post_id: int, selected_day: str, time_period: str,
@@ -451,4 +421,34 @@ async def schedule_post_and_finish(callback: CallbackQuery, post_id: int, schedu
             await callback.answer("❌ Пост не найден", show_alert=True)
             return
 
-        #
+        # Планируем пост
+        scheduled_id = post_storage.schedule_post(
+            processed_text=post_data['processed_text'],
+            publish_time=schedule_time,
+            user_id=post_data['user_id'],
+            original_message=post_data.get('original_message'),
+            original_messages=post_data.get('original_messages')
+        )
+
+        # Удаляем из ожидающих
+        post_storage.remove_pending_post(post_id)
+
+        # Форматируем время для пользователя
+        formatted_time = time_slot_manager.format_datetime_for_user(schedule_time)
+
+        await callback.message.edit_text(
+            text=f"✅ **ПОСТ ЗАПЛАНИРОВАН**\n\n"
+                 f"📅 Время публикации: **{formatted_time}**\n\n"
+                 f"Пост будет автоматически опубликован в указанное время.",
+            reply_markup=create_back_to_menu_keyboard(),
+            parse_mode="Markdown"
+        )
+        await callback.answer(f"✅ Запланировано на {formatted_time}")
+
+        # Возвращаем в главное меню
+        await state.set_state(Menu.main)
+        logger.info(f"Пост #{post_id} запланирован на {schedule_time}")
+
+    except Exception as e:
+        logger.error(f"Ошибка завершения планирования: {e}")
+        await callback.answer("❌ Ошибка планирования", show_alert=True)

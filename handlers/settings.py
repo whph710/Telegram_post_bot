@@ -12,7 +12,7 @@ from keyboards import (
     create_admin_confirm_keyboard, create_back_to_settings_keyboard,
     create_back_to_menu_keyboard
 )
-from config import ADMIN_ID, MESSAGES, PROMPT_NAMES, GROUP_ID
+from config import ADMIN_ID, MESSAGES, PROMPT_NAMES, GROUP_ID, update_admin_id, update_group_id
 from services.ai_processor import ai_processor
 from utils.post_storage import post_storage
 
@@ -184,7 +184,7 @@ async def show_stats(callback: CallbackQuery):
             f"⏰ Запланированных постов: {stats['scheduled_posts']}\n"
             f"✅ Опубликованных постов: {stats['published_posts']}\n"
             f"📈 Всего обработано: {stats['total_processed']}\n\n"
-            f"👤 Текущий админ: {ADMIN_ID}\n"
+            f"👤 Текущий админ: `{ADMIN_ID}`\n"
             f"📢 Группа: `{GROUP_ID}`"
         )
 
@@ -255,18 +255,38 @@ async def confirm_admin_change(callback: CallbackQuery, callback_data: AdminActi
     new_admin_id = callback_data.admin_id
 
     try:
-        # В реальном боте здесь должно быть обновление конфига/БД
-        # Пока что просто уведомляем
+        # Обновляем ID админа в конфиге
+        success = update_admin_id(new_admin_id)
 
-        await callback.message.edit_text(
-            text=f"⚠️ **ФУНКЦИЯ В РАЗРАБОТКЕ**\n\n"
-                 f"Смена админа на ID {new_admin_id} будет реализована в следующей версии.\n\n"
-                 f"Для смены админа сейчас нужно изменить переменную ADMIN_ID в .env файле.",
-            reply_markup=create_back_to_settings_keyboard(),
-            parse_mode="Markdown"
-        )
-        await callback.answer("⚠️ Функция в разработке")
-        await state.clear()
+        if success:
+            await callback.message.edit_text(
+                text=f"✅ **АДМИН ИЗМЕНЕН**\n\n"
+                     f"Новый админ: `{new_admin_id}`\n\n"
+                     f"Передаю права и перезапускаю бота...",
+                parse_mode="Markdown"
+            )
+
+            # Уведомляем нового админа
+            try:
+                from bot import bot
+                await bot.send_message(
+                    chat_id=new_admin_id,
+                    text="🎉 **Вы назначены администратором бота!**\n\n"
+                         "Теперь вы можете управлять ботом. Отправьте /start для начала работы.",
+                    parse_mode="Markdown"
+                )
+            except Exception as e:
+                logger.warning(f"Не удалось уведомить нового админа: {e}")
+
+            await callback.answer("✅ Админ изменен")
+            await state.clear()
+
+            # Завершаем работу для перезапуска
+            import sys
+            sys.exit(0)
+
+        else:
+            await callback.answer("❌ Ошибка изменения админа", show_alert=True)
 
     except Exception as e:
         logger.error(f"Ошибка подтверждения смены админа: {e}")
@@ -306,15 +326,42 @@ async def handle_group_change(message: Message, state: FSMContext):
             await message.reply("❌ ID группы должен начинаться с -100")
             return
 
-        # В реальном боте здесь должна быть проверка доступа к группе
-        await message.reply(
-            text=f"⚠️ **ФУНКЦИЯ В РАЗРАБОТКЕ**\n\n"
-                 f"Смена группы на ID {new_group_id} будет реализована в следующей версии.\n\n"
-                 f"Для смены группы сейчас нужно изменить переменную GROUP_ID в .env файле.",
-            parse_mode="Markdown"
-        )
+        # Проверяем доступ к группе
+        await message.reply("🧪 Проверяю доступ к группе...")
 
-        await state.set_state(Settings.main)
+        try:
+            from bot import bot
+            # Пытаемся отправить тестовое сообщение
+            test_msg = await bot.send_message(
+                chat_id=new_group_id,
+                text="🧪 Тест доступа к группе"
+            )
+            # Удаляем тестовое сообщение
+            await bot.delete_message(new_group_id, test_msg.message_id)
+
+            # Обновляем ID группы
+            success = update_group_id(new_group_id)
+
+            if success:
+                await message.reply(
+                    f"✅ **ГРУППА ИЗМЕНЕНА**\n\n"
+                    f"Новая группа: `{new_group_id}`\n\n"
+                    f"Бот теперь будет публиковать посты в эту группу.",
+                    parse_mode="Markdown"
+                )
+                await state.set_state(Settings.main)
+            else:
+                await message.reply("❌ Ошибка сохранения настроек группы")
+
+        except Exception as e:
+            logger.error(f"Ошибка доступа к группе {new_group_id}: {e}")
+            await message.reply(
+                f"❌ **НЕТ ДОСТУПА К ГРУППЕ**\n\n"
+                f"Убедитесь, что:\n"
+                f"• Бот добавлен в группу\n"
+                f"• У бота есть права на отправку сообщений\n"
+                f"• ID группы указан правильно"
+            )
 
     except ValueError:
         await message.reply("❌ Неверный формат ID. Отправьте только цифры.")

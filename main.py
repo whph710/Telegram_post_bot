@@ -5,7 +5,7 @@ import sys
 import os
 
 from bot import bot, dp
-from config import ADMIN_ID, MESSAGES, SETTINGS
+from config import ADMIN_ID, MESSAGES, SETTINGS, validate_config, get_config_summary
 
 # Импорт всех хендлеров
 from handlers import menu, post_creation, settings
@@ -46,6 +46,24 @@ async def on_startup():
     global scheduler_service
 
     try:
+        # Проверяем конфигурацию
+        is_valid, errors = validate_config()
+        if not is_valid:
+            logging.error("Ошибки конфигурации:")
+            for error in errors:
+                logging.error(f"  - {error}")
+
+            print("\n❌ КРИТИЧЕСКИЕ ОШИБКИ КОНФИГУРАЦИИ:")
+            for error in errors:
+                print(f"  • {error}")
+
+            print("\n📝 Создайте .env файл со следующими параметрами:")
+            print("API_TOKEN=ваш_токен_бота")
+            print("MY_ID=ваш_телеграм_id")
+            print("GROUP_ID=id_группы_для_постов")
+            print("DEEPSEEK=ваш_deepseek_api_key")
+            sys.exit(1)
+
         # Создаем файлы промптов если нужно
         await create_prompt_files()
 
@@ -61,11 +79,17 @@ async def on_startup():
         await scheduler_service.start()
 
         # Уведомляем админа о запуске
-        await bot.send_message(ADMIN_ID, MESSAGES['bot_started'])
+        try:
+            startup_message = f"{MESSAGES['bot_started']}\n\n{get_config_summary()}"
+            await bot.send_message(ADMIN_ID, startup_message, parse_mode="Markdown")
+        except Exception as e:
+            logging.warning(f"Не удалось отправить стартовое сообщение админу: {e}")
+
         logging.info("🚀 Бот успешно запущен")
 
     except Exception as e:
         logging.error(f"Ошибка при запуске бота: {e}")
+        sys.exit(1)
 
 
 async def on_shutdown():
@@ -91,15 +115,37 @@ async def on_shutdown():
 
 def setup_logging():
     """Настройка логирования"""
-    logging.basicConfig(
-        level=getattr(logging, SETTINGS['log_level'].upper()),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[
-            logging.FileHandler(SETTINGS['log_file'], encoding='utf-8', mode='a'),
-            logging.StreamHandler()
-        ]
+    # Создаем форматтер
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
     )
+
+    # Настраиваем корневой логгер
+    root_logger = logging.getLogger()
+    root_logger.setLevel(getattr(logging, SETTINGS['log_level'].upper()))
+
+    # Очищаем существующие хендлеры
+    root_logger.handlers.clear()
+
+    # Файловый хендлер с ротацией
+    try:
+        from logging.handlers import RotatingFileHandler
+        file_handler = RotatingFileHandler(
+            SETTINGS['log_file'],
+            maxBytes=10 * 1024 * 1024,  # 10MB
+            backupCount=5,
+            encoding='utf-8'
+        )
+        file_handler.setFormatter(formatter)
+        root_logger.addHandler(file_handler)
+    except Exception as e:
+        print(f"Ошибка создания файлового логгера: {e}")
+
+    # Консольный хендлер
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
 
     # Настройка уровней логирования для внешних библиотек
     logging.getLogger("aiogram.event").setLevel(logging.WARNING)
@@ -109,22 +155,49 @@ def setup_logging():
     logging.getLogger("openai._base_client").setLevel(logging.WARNING)
 
 
+def check_python_version():
+    """Проверяет версию Python"""
+    if sys.version_info < (3, 8):
+        print("❌ Требуется Python 3.8 или выше")
+        sys.exit(1)
+
+
+def check_dependencies():
+    """Проверяет установку зависимостей"""
+    required_packages = ['aiogram', 'openai', 'python-dotenv', 'httpx']
+    missing_packages = []
+
+    for package in required_packages:
+        try:
+            __import__(package)
+        except ImportError:
+            missing_packages.append(package)
+
+    if missing_packages:
+        print("❌ Отсутствуют необходимые пакеты:")
+        for package in missing_packages:
+            print(f"  • {package}")
+        print("\n💡 Установите их командой:")
+        print("pip install -r requirements.txt")
+        sys.exit(1)
+
+
 async def main():
     """Главная функция"""
+    print("🚀 Запуск Telegram бота...")
+
+    # Базовые проверки
+    check_python_version()
+    check_dependencies()
+
     # Настраиваем логирование
     setup_logging()
     logger = logging.getLogger(__name__)
 
-    # Проверяем конфигурацию
+    # Проверяем основные настройки
     if not ADMIN_ID:
         logger.error("❌ Не задан ADMIN_ID")
         sys.exit(1)
-
-    # Регистрируем роутеры
-    dp.include_router(menu.router)
-    dp.include_router(post_creation.router)
-    dp.include_router(settings.router)
-    dp.include_router(scheduler.router)
 
     # Регистрируем события
     dp.startup.register(on_startup)

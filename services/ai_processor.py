@@ -140,35 +140,8 @@ class AIProcessor:
         for pattern in unwanted_patterns:
             cleaned_text = re.sub(pattern, '', cleaned_text, flags=re.IGNORECASE)
 
-        # ИСПРАВЛЕНО: Проверяем и исправляем незакрытые теги
-        # Находим все открывающие теги
-        open_tags = re.findall(r'<(b|i|u|s|code)(?:\s[^>]*)?>', cleaned_text, re.IGNORECASE)
-        close_tags = re.findall(r'</(b|i|u|s|code)>', cleaned_text, re.IGNORECASE)
-
-        # Подсчитываем теги
-        from collections import Counter
-        open_count = Counter([tag.lower() for tag in open_tags])
-        close_count = Counter([tag.lower() for tag in close_tags])
-
-        # Добавляем недостающие закрывающие теги
-        for tag, count in open_count.items():
-            missing = count - close_count.get(tag, 0)
-            if missing > 0:
-                for _ in range(missing):
-                    cleaned_text += f'</{tag}>'
-                logger.warning(f"Добавлен недостающий закрывающий тег: </{tag}>")
-
-        # Удаляем лишние закрывающие теги
-        for tag, count in close_count.items():
-            excess = count - open_count.get(tag, 0)
-            if excess > 0:
-                # Удаляем лишние закрывающие теги с конца
-                for _ in range(excess):
-                    pattern = f'</{tag}>'
-                    pos = cleaned_text.rfind(pattern)
-                    if pos != -1:
-                        cleaned_text = cleaned_text[:pos] + cleaned_text[pos + len(pattern):]
-                        logger.warning(f"Удален лишний закрывающий тег: </{tag}>")
+        # Исправляем незакрытые теги
+        cleaned_text = self._fix_unclosed_tags(cleaned_text)
 
         # Нормализация пробелов
         cleaned_text = re.sub(r'\n\s*\n', '\n\n', cleaned_text)
@@ -186,6 +159,61 @@ class AIProcessor:
                 logger.warning(f"Удален неподдерживаемый тег: {tag}")
 
         return cleaned_text
+
+    def _fix_unclosed_tags(self, text: str) -> str:
+        """Исправляет незакрытые теги"""
+        # Находим все открывающие теги
+        open_tags = re.findall(r'<(b|i|u|s|code)(?:\s[^>]*)?>', text, re.IGNORECASE)
+        close_tags = re.findall(r'</(b|i|u|s|code)>', text, re.IGNORECASE)
+
+        # Подсчитываем теги
+        from collections import Counter
+        open_count = Counter([tag.lower() for tag in open_tags])
+        close_count = Counter([tag.lower() for tag in close_tags])
+
+        # Добавляем недостающие закрывающие теги
+        for tag, count in open_count.items():
+            missing = count - close_count.get(tag, 0)
+            if missing > 0:
+                for _ in range(missing):
+                    text += f'</{tag}>'
+                logger.info(f"Добавлен недостающий закрывающий тег: </{tag}>")
+
+        # Удаляем лишние закрывающие теги
+        for tag, count in close_count.items():
+            excess = count - open_count.get(tag, 0)
+            if excess > 0:
+                # Удаляем лишние закрывающие теги с конца
+                for _ in range(excess):
+                    pattern = f'</{tag}>'
+                    pos = text.rfind(pattern)
+                    if pos != -1:
+                        text = text[:pos] + text[pos + len(pattern):]
+                        logger.info(f"Удален лишний закрывающий тег: </{tag}>")
+
+        return text
+
+    def validate_telegram_html(self, text: str) -> str:
+        """Валидация HTML для Telegram API"""
+        if not text:
+            return ""
+
+        # Проверяем длину текста
+        if len(text) > 4096:
+            logger.warning(f"Текст слишком длинный ({len(text)} символов), обрезаем до 4096")
+            text = text[:4093] + "..."
+
+        # Проверяем корректность HTML
+        try:
+            # Простая проверка на корректность HTML тегов
+            import xml.etree.ElementTree as ET
+            # Оборачиваем в корневой элемент для проверки
+            test_xml = f"<root>{text}</root>"
+            ET.fromstring(test_xml)
+            return text
+        except ET.ParseError as e:
+            logger.warning(f"Некорректный HTML, исправляем: {e}")
+            return self.clean_html_for_telegram(text)
 
     async def validate_connection(self) -> bool:
         """Проверяет подключение к DeepSeek API"""
@@ -214,7 +242,7 @@ class AIProcessor:
         # Проверяем соединение
         client = await self._get_client()
         if not client:
-            return f"{MESSAGES['ai_processing_error']}. Исходный текст:\n{text}"
+            return f"{MESSAGES.get('ai_processing_error', 'Ошибка ИИ')}. Исходный текст:\n{text}"
 
         try:
             # Загружаем промпт
@@ -249,13 +277,14 @@ class AIProcessor:
 
             result = response.choices[0].message.content.strip()
             cleaned_result = self.clean_html_for_telegram(result)
+            validated_result = self.validate_telegram_html(cleaned_result)
 
-            logger.info(f"AI обработка завершена успешно (результат: {len(cleaned_result)} символов)")
-            return cleaned_result
+            logger.info(f"AI обработка завершена успешно (результат: {len(validated_result)} символов)")
+            return validated_result
 
         except Exception as e:
             logger.error(f"Ошибка AI обработки: {e}")
-            return f"{MESSAGES['ai_processing_error']}: {str(e)}\n\nИсходный текст:\n{text}"
+            return f"{MESSAGES.get('ai_processing_error', 'Ошибка ИИ')}: {str(e)}\n\nИсходный текст:\n{text}"
 
     def clear_cache(self):
         """Очищает кеш промптов"""

@@ -44,9 +44,10 @@ async def show_post_preview(user_id: int, processed_text: str, original_messages
 
     # Формируем текст превью
     preview_text = (
-        f"{MESSAGES['preview_title'].format(post_id=post_id)}\n\n"
+        f"📋 **ПРЕДПРОСМОТР ПОСТА #{post_id}**\n\n"
         f"{processed_text}\n\n"
-        f"{MESSAGES['preview_footer']}"
+        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"Выберите действие:"
     )
 
     # Ограничиваем длину
@@ -61,7 +62,7 @@ async def show_post_preview(user_id: int, processed_text: str, original_messages
             chat_id=user_id,
             text=preview_text,
             reply_markup=keyboard,
-            parse_mode="HTML",
+            parse_mode="Markdown",
             disable_web_page_preview=True
         )
         logger.info(f"Отправлен превью поста #{post_id} пользователю {user_id}")
@@ -77,7 +78,7 @@ async def process_album_and_preview(media_group_id: str):
         return
 
     album_messages = albums.pop(media_group_id)
-    # ИСПРАВЛЕНО: убираем await для pop, так как это не awaitable
+    # Очищаем таймер
     if media_group_id in album_timers:
         timer_task = album_timers.pop(media_group_id)
         if timer_task and not timer_task.done():
@@ -200,7 +201,7 @@ async def handle_post_improvement(message: Message, post_id: int):
         original_text = post_data['processed_text']
         improvement_text = message.text
 
-        combined_text = f"{original_text}\n\n{improvement_text}"
+        combined_text = f"Основной пост:\n{original_text}\n\nДополнения:\n{improvement_text}"
 
         # Обрабатываем через ИИ с промптом 3 (доработка)
         processed_text = await process_with_ai(
@@ -278,24 +279,39 @@ async def handle_post_action(callback: CallbackQuery, callback_data: PostAction,
 async def handle_publish_now(callback: CallbackQuery, post_data: dict, post_id: int):
     """Обрабатывает немедленную публикацию поста"""
     try:
+        await callback.answer("🔄 Публикуем пост...")
+
         from services.publisher import publish_post_now
         success = await publish_post_now(post_data)
 
         if success:
             post_storage.remove_pending_post(post_id)
             await callback.message.edit_text(
-                text=MESSAGES['post_published'].format(post_id=post_id),
-                reply_markup=create_back_to_menu_keyboard()
+                text=f"✅ **ПОСТ ОПУБЛИКОВАН**\n\n"
+                     f"Пост #{post_id} успешно опубликован в группу!",
+                reply_markup=create_back_to_menu_keyboard(),
+                parse_mode="Markdown"
             )
-            await callback.answer("✅ Пост опубликован!")
             logger.info(f"Пост #{post_id} успешно опубликован")
         else:
-            await callback.answer("❌ Ошибка публикации", show_alert=True)
+            await callback.message.edit_text(
+                text=f"❌ **ОШИБКА ПУБЛИКАЦИИ**\n\n"
+                     f"Не удалось опубликовать пост #{post_id}.\n"
+                     f"Проверьте настройки группы и попробуйте еще раз.",
+                reply_markup=create_post_preview_keyboard(post_id),
+                parse_mode="Markdown"
+            )
             logger.error(f"Ошибка публикации поста #{post_id}")
 
     except Exception as e:
         logger.error(f"Ошибка при публикации поста #{post_id}: {e}")
-        await callback.answer("❌ Ошибка публикации", show_alert=True)
+        await callback.message.edit_text(
+            text=f"❌ **КРИТИЧЕСКАЯ ОШИБКА**\n\n"
+                 f"Произошла ошибка при публикации поста #{post_id}:\n"
+                 f"{str(e)}",
+            reply_markup=create_post_preview_keyboard(post_id),
+            parse_mode="Markdown"
+        )
 
 
 async def handle_schedule_start(callback: CallbackQuery, state: FSMContext, post_id: int):
@@ -309,7 +325,7 @@ async def handle_schedule_start(callback: CallbackQuery, state: FSMContext, post
 
         schedule_text = (
             f"⏰ **ПЛАНИРОВАНИЕ ПОСТА #{post_id}**\n\n"
-            f"Выберите день и время:"
+            f"Выберите день и время для публикации:"
         )
 
         await callback.message.edit_text(
@@ -317,7 +333,7 @@ async def handle_schedule_start(callback: CallbackQuery, state: FSMContext, post
             reply_markup=create_simple_scheduler_keyboard(post_id),
             parse_mode="Markdown"
         )
-        await callback.answer()
+        await callback.answer("⏰ Выберите время публикации")
 
     except Exception as e:
         logger.error(f"Ошибка начала планирования: {e}")
@@ -329,8 +345,11 @@ async def handle_edit_request(callback: CallbackQuery, post_id: int):
     try:
         post_storage.update_pending_post(post_id, awaiting_edit=True)
         await callback.message.edit_text(
-            text=MESSAGES['edit_post_prompt'].format(post_id=post_id),
-            reply_markup=create_back_to_menu_keyboard()
+            text=f"✏️ **ДОРАБОТКА ПОСТА #{post_id}**\n\n"
+                 f"Отправьте сообщение с дополнениями к посту.\n"
+                 f"Я интегрирую вашу информацию в существующий текст.",
+            reply_markup=create_back_to_menu_keyboard(),
+            parse_mode="Markdown"
         )
         await callback.answer("📝 Отправьте дополнения к посту")
         logger.info(f"Пост #{post_id} переведен в режим редактирования")
@@ -343,10 +362,18 @@ async def handle_edit_request(callback: CallbackQuery, post_id: int):
 async def handle_delete_post(callback: CallbackQuery, post_id: int):
     """Обрабатывает удаление поста"""
     try:
-        post_storage.remove_pending_post(post_id)
-        await callback.message.delete()
-        await callback.answer(MESSAGES['post_deleted'])
-        logger.info(f"Пост #{post_id} удален пользователем")
+        success = post_storage.remove_pending_post(post_id)
+        if success:
+            await callback.message.edit_text(
+                text=f"🗑 **ПОСТ УДАЛЕН**\n\n"
+                     f"Пост #{post_id} был удален из системы.",
+                reply_markup=create_back_to_menu_keyboard(),
+                parse_mode="Markdown"
+            )
+            await callback.answer("🗑 Пост удален")
+            logger.info(f"Пост #{post_id} удален пользователем")
+        else:
+            await callback.answer("❌ Пост не найден", show_alert=True)
 
     except Exception as e:
         logger.error(f"Ошибка удаления поста #{post_id}: {e}")
